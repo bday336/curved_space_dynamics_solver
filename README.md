@@ -1,4 +1,4 @@
-# curved_space_dynamics_solver
+# Dynamics Solver for Extended Body Systems in Generic Curved Space
 
 Source code for Generic Curved Space Dynamics Solver developed as part of my PhD thesis work in collaboration with Steve Trettel and Sabetta Matsumoto.
 
