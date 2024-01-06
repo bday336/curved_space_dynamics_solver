@@ -6,10 +6,94 @@ from src.test_system_simulations.test_system_bank import dynfunc_h3simbar, dynja
 # Simulation class setup
 
 class SpringBarSimulation:
+    """
+    A class used to perform rody body simulation with spring potential coupling
+
+    ...
+
+    Attributes
+    ----------
+    ambient_geo : str
+        the geometry of ambient space in simulation environment
+        - currently supporting:
+            * h3 = 3D hyperbolic space
+            * s3 = 3D spherical space
+
+    system_params : array
+        the array of parameters describing system consisting of:
+            * v  = initial velocity field
+            * ks = stiffness of spring potential
+            * x  = rest length of spring potential
+            * m  = mass of vertices    
+
+    dt : float
+        the simuation time step size
+    tmax : float
+        the total simulation time
+
+    solver_id : str
+        the solver to be used to evaluate dynamics
+        - currently supporting:
+            * gs1 = 1-step Gauss collocation 
+            * gs2 = 2-step Gauss collocation 
+            * gs3 = 3-step Gauss collocation 
+            * rs2 = 2-step Radau collocation (RadauIIA)
+            * rs3 = 3-step Radau collocation (RadauIIA)
+
+    Methods
+    -------
+    set_initial_conditions(system_ics)
+        Inputs user given initial conditions of system for simulation
+
+    clear_data()
+        Clears any simulation data stored in simulation object
+
+    run()
+        Runs simulation once given all necessary information
+
+    output_data()
+        Outputs simulation data to file with name:
+            {self.ambient_geo}_r_{self.solver_id}_sim_tmax{self.tmax}_dt{self.dt}.npy
+    """
 
     def __init__(self, ambient_geo, system_params, dt, tmax, solver_id):
+        """
+        Parameters
+        ----------
+        ambient_geo : str
+            the geometry of ambient space in simulation environment
+            - currently supporting:
+                * h3 = 3D hyperbolic space
+                * s3 = 3D spherical space
+
+        system_params : array
+            the array of parameters describing system consisting of:
+                * v  = initial velocity field
+                * ks = stiffness of spring potential
+                * x  = rest length of spring potential
+                * m  = mass of vertices    
+
+        dt : float
+            the simuation time step size
+        tmax : float
+            the total simulation time
+
+        solver_id : str
+            the solver to be used to evaluate dynamics
+            - currently supporting:
+                * gs1 = 1-step Gauss collocation 
+                * gs2 = 2-step Gauss collocation 
+                * gs3 = 3-step Gauss collocation 
+                * rs2 = 2-step Radau collocation (RadauIIA)
+                * rs3 = 3-step Radau collocation (RadauIIA)
+
+        """
+
         # Ambient Space
         self.ambient_geo = ambient_geo
+
+        # System Parameters [ v, ks, x, m ]
+        self.system_params  = system_params
 
         # Time Data
         self.dt = dt   
@@ -19,27 +103,55 @@ class SpringBarSimulation:
         # Test System Data
         self.simdatalist = np.zeros((self.t_arr.shape[0],12))
 
-        # System Parameters [ v, ks, x, m ]
-        self.system_params  = system_params
-
         # Integrator to use
         self.solver_id = solver_id
         self.tol = 1e-15
 
         # Internal Flags
-        self.have_ics = False
-        self.have_run = False
+        self._have_ics = False
+        self._have_run = False
 
     def set_initial_conditions(self, system_ics):
+        """
+        Inputs user given initial conditions of system for simulation
+
+        Position and velocity information should be given in terms of the
+        parameterization of the ambient space
+
+        Parameters
+        ----------
+        system_params : array
+            the array of parameters describing system consisting of:
+                * p1 = initial posiiton of vertex 1
+                * p2 = initial posiiton of vertex 2
+                * v1 = initial velocity of vertex 1
+                * v2 = initial velocity of vertex 2
+
+        """
+
         self.system_ics = system_ics
-        self.have_ics = True
+        self._have_ics = True
 
     def clear_data(self):
+        """
+        Clears any simulation data stored in simulation object
+
+        """
+
         self.simdatalist = np.zeros((self.t_arr.shape[0],12))
-        self.have_run = False
+        self._have_run = False
 
     def run(self):
-        if self.have_ics:
+        """
+        Runs simulation once given all necessary information
+
+        Raises
+        ----------
+        NotImplementedError
+            If no initial conditions have been provided
+        """
+
+        if self._have_ics:
             # Hyperbolic Space (Sim)
             if self.ambient_geo == "h3" or self.ambient_geo == "H3":
                 self.simdatalist[0] = self.system_ics.copy()
@@ -159,99 +271,27 @@ class SpringBarSimulation:
                                 tol=self.tol)
 
             print("Simulation run completed!")
-            self.have_run = True
+            self._have_run = True
         else:
-            print("Error: Must provide initial conditions via set_initial_conditions() before running simulation")
+            raise NotImplementedError("Must provide initial conditions via set_initial_conditions() before running simulation")
 
     def output_data(self):
-        if self.have_run:
+        """
+        Outputs simulation data to file with name:
+            {self.ambient_geo}_r_{self.solver_id}_sim_tmax{self.tmax}_dt{self.dt}.npy
+
+        Raises
+        ----------
+        NotImplementedError
+            If simulation has not been run, i.e. no data generated
+        """
+
+        if self._have_run:
             if self.ambient_geo == "h3" or self.ambient_geo == "H3":
                 np.save("h3_r_{}_sim_tmax{}_dt{}".format(self.solver_id, str(self.tmax), str(self.dt)), self.simdatalist)
             if self.ambient_geo == "s3" or self.ambient_geo == "S3":
                 np.save("s3_r_{}_sim_tmax{}_dt{}".format(self.solver_id, str(self.tmax), str(self.dt)), self.simdatalist)
         else:
-            print("Error: Must use run() to generate data")
+            raise NotImplementedError("Must use run() to generate data")
 
-        
-
-# import matplotlib.pyplot as plt
-# from function_bank import rot2hyp, hyp2rot, hyp2poin3d, h3dist, killingvech3, rot2r4, r42rot, s2rstproj, r4dist, killingvecs3
-
-# # Initialize Test System
-                
-# dt = .1         # Number of steps
-# t_max = 10.      # Total simulation time
-
-# # Initial Data
-# v = 1.      # Initial Velocity
-# ks = 1.     # Spring Stiffness
-# x = 1.      # Spring Rest Length H3 and S3
-# # x = np.pi - 1.      # Spring Rest Length S3 exact
-# m = 1.      # Mass of point masses
-# params = [v,ks,x,m]
-
-
-# # Exact bar in H3
-# # geometry, system_id = "h3", "exact"
-# # startvec = np.array([.5,0.])
-# # Sim bar in H3
-# geometry = "h3"
-# startvec = np.array([
-#     [.5,np.pi/2.,np.pi/2.],[.5,np.pi/2.,3.*np.pi/2.],
-#     killingvech3([.5,np.pi/2.,np.pi/2.],v,"x"), killingvech3([.5,np.pi/2.,3.*np.pi/2.],v,"x")]).flatten()
-
-# # Exact bar in S3
-# # geometry, system_id = "s3", "exact"
-# # startvec = np.array([(np.pi - 1.)/2.,0.])
-# # Sim bar in S3
-# # geometry, system_id = "s3", "sim"
-# # startvec = np.array([
-# #     [(np.pi - 1.)/2.,np.pi/2.,0.],[(np.pi + 1.)/2.,np.pi/2.,0.],
-# #     killingvecs3([(np.pi - 1.)/2.,np.pi/2.,0.],-v,"vz"), killingvecs3([(np.pi + 1.)/2.,np.pi/2.,0.],-v,"vz")]).flatten()
-
-# # Solver 
-# solver_id = "gs1"
-
-# # Initialize Simulation Object
-# sim_test = SpringBarSimulation(geometry, params, dt, t_max, solver_id)
-# sim_test.set_initial_conditions(startvec)
-# sim_test.run()
-# sim_test.output_data()
-
-# data1 = np.load("h3_r_gs1_sim_tmax10.0_dt0.1.npy")
-
-# fig,ax=plt.subplots(1,1)
-
-# distdata1 = np.zeros(np.shape(data1)[0])
-# # distdata2 = np.zeros(np.shape(data2)[0])
-# # distdata3 = np.zeros(np.shape(data3)[0])
-
-# # counter = 0
-# # for a in range(np.shape(data1)[0]):
-# #     distdata1[counter] = r4dist(rot2r4(data1[a][0:3]),rot2r4(data1[a][3:6]))
-# #     distdata2[counter] = r4dist(rot2r4(data2[a][0:3]),rot2r4(data2[a][3:6]))
-# #     distdata3[counter] = r4dist(rot2r4(data3[a][0:3]),rot2r4(data3[a][3:6]))
-# #     counter += 1
-
-# counter = 0
-# for a in range(np.shape(data1)[0]):
-#     distdata1[counter] = h3dist(rot2hyp(data1[a][0:3]),rot2hyp(data1[a][3:6]))
-#     # distdata2[counter] = h3dist(rot2hyp(data2[a][0:3]),rot2hyp(data2[a][3:6]))
-#     # distdata3[counter] = h3dist(rot2hyp(data3[a][0:3]),rot2hyp(data3[a][3:6]))
-#     counter += 1
-
-# # ax.plot(t_arr,2.*(np.pi/2. - data1[:,0]),'r',label = "Gauss s1")
-# # ax.plot(t_arr,2.*(np.pi/2. - data2[:,0]),'k',label = "Gauss s2")
-# # ax.plot(t_arr,2.*(np.pi/2. - data3[:,0]),'b',label = "Gauss s3")
-# # ax.plot(sim_test.t_arr,2.*(data1[:,0]),'b',label = "Gauss h3")
-# # ax.plot(t_arr,2.*(data2[:,0]),'b',label = "Gauss h3")
-# # ax.plot(t_arr,2.*(data3[:,0]),'b',label = "Gauss h3")
-# ax.plot(sim_test.t_arr,distdata1,'r',label = "Gauss s1")
-# # ax.plot(t_arr,distdata2,'k',label = "Gauss s2")
-# # ax.plot(t_arr,distdata3,'b',label = "Gauss s3")
-# ax.legend()
-# ax.set_title('Simulation Data')
-# ax.set_xlabel('t')
-# ax.set_ylabel('l')
-# plt.show()
     

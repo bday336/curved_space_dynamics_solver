@@ -1,13 +1,94 @@
 import numpy as np
-from build.src.integrator_files.integrator_bank import gausss1, gausss2, gausss3, rads2, rads3
-from build.src.test_system_simulations.test_system_bank import dynfunc_h3simtriangle, dynjac_h3simtriangle, dynfunc_s3simtriangle, dynjac_s3simtriangle
+from src.integrator_files.integrator_bank import gausss1, gausss2, gausss3, rads2, rads3
+from src.test_system_simulations.test_system_bank import dynfunc_h3simtriangle, dynjac_h3simtriangle, dynfunc_s3simtriangle, dynjac_s3simtriangle
 
 
 # Simulation class setup
 
 class SpringTriangleSimulation:
+    """
+    A class used to perform triangle body simulation with spring potential coupling
+
+    ...
+
+    Attributes
+    ----------
+    ambient_geo : str
+        the geometry of ambient space in simulation environment
+        - currently supporting:
+            * h3 = 3D hyperbolic space
+            * s3 = 3D spherical space
+
+    system_params : array
+        the array of parameters describing system consisting of:
+            * v  = initial velocity field
+            * ks = stiffness of spring potential
+            * x  = rest length of spring potential
+            * m  = mass of vertices    
+
+    dt : float
+        the simuation time step size
+    tmax : float
+        the total simulation time
+
+    solver_id : str
+        the solver to be used to evaluate dynamics
+        - currently supporting:
+            * gs1 = 1-step Gauss collocation 
+            * gs2 = 2-step Gauss collocation 
+            * gs3 = 3-step Gauss collocation 
+            * rs2 = 2-step Radau collocation (RadauIIA)
+            * rs3 = 3-step Radau collocation (RadauIIA)
+
+    Methods
+    -------
+    set_initial_conditions(system_ics)
+        Inputs user given initial conditions of system for simulation
+
+    clear_data()
+        Clears any simulation data stored in simulation object
+
+    run()
+        Runs simulation once given all necessary information
+
+    output_data()
+        Outputs simulation data to file with name:
+            {self.ambient_geo}_t_{self.solver_id}_sim_tmax{self.tmax}_dt{self.dt}.npy
+    """
 
     def __init__(self, ambient_geo, system_params, dt, tmax, solver_id):
+        """
+        Parameters
+        ----------
+        ambient_geo : str
+            the geometry of ambient space in simulation environment
+            - currently supporting:
+                * h3 = 3D hyperbolic space
+                * s3 = 3D spherical space
+
+        system_params : array
+            the array of parameters describing system consisting of:
+                * v  = initial velocity field
+                * ks = stiffness of spring potential
+                * x  = rest length of spring potential
+                * m  = mass of vertices    
+
+        dt : float
+            the simuation time step size
+        tmax : float
+            the total simulation time
+
+        solver_id : str
+            the solver to be used to evaluate dynamics
+            - currently supporting:
+                * gs1 = 1-step Gauss collocation 
+                * gs2 = 2-step Gauss collocation 
+                * gs3 = 3-step Gauss collocation 
+                * rs2 = 2-step Radau collocation (RadauIIA)
+                * rs3 = 3-step Radau collocation (RadauIIA)
+
+        """
+
         # Ambient Space
         self.ambient_geo = ambient_geo
 
@@ -26,19 +107,52 @@ class SpringTriangleSimulation:
         self.solver_id = solver_id
         self.tol = 1e-15
 
-        self.have_ics = False
-        self.have_run = False
+        self._have_ics = False
+        self._have_run = False
 
     def set_initial_conditions(self, system_ics):
+        """
+        Inputs user given initial conditions of system for simulation
+
+        Position and velocity information should be given in terms of the
+        parameterization of the ambient space
+
+        Parameters
+        ----------
+        system_params : array
+            the array of parameters describing system consisting of:
+                * p1 = initial posiiton of vertex 1
+                * p2 = initial posiiton of vertex 2
+                * p3 = initial posiiton of vertex 3
+                * v1 = initial velocity of vertex 1
+                * v2 = initial velocity of vertex 2
+                * v3 = initial velocity of vertex 3
+
+        """
+
         self.system_ics = system_ics
-        self.have_ics = True
+        self._have_ics = True
 
     def clear_data(self):
+        """
+        Clears any simulation data stored in simulation object
+
+        """
+
         self.simdatalist = np.zeros((self.t_arr.shape[0],18))
-        self.have_run = False
+        self._have_run = False
 
     def run(self):
-        if self.have_ics:
+        """
+        Runs simulation once given all necessary information
+
+        Raises
+        ----------
+        NotImplementedError
+            If no initial conditions have been provided
+        """
+
+        if self._have_ics:
             # Hyperbolic Space (Sim)
             if self.ambient_geo == "h3" or self.ambient_geo == "H3":
                 self.simdatalist[0] = self.system_ics.copy()
@@ -158,18 +272,28 @@ class SpringTriangleSimulation:
                                 tol=self.tol)
 
             print("Simulation run completed!")
-            self.have_run = True
+            self._have_run = True
         else:
-            print("Error: Must provide initial conditions via set_initial_conditions() before running simulation")
+            raise NotImplementedError("Must provide initial conditions via set_initial_conditions() before running simulation")
 
     def output_data(self):
-        if self.have_run:
+        """
+        Outputs simulation data to file with name:
+            {self.ambient_geo}_t_{self.solver_id}_sim_tmax{self.tmax}_dt{self.dt}.npy
+
+        Raises
+        ----------
+        NotImplementedError
+            If simulation has not been run, i.e. no data generated
+        """
+
+        if self._have_run:
             if self.ambient_geo == "h3" or self.ambient_geo == "H3":
                 np.save("h3_t_{}_sim_tmax{}_dt{}".format(self.solver_id, str(self.tmax), str(self.dt)), self.simdatalist)
             if self.ambient_geo == "s3" or self.ambient_geo == "S3":
                 np.save("s3_t_{}_sim_tmax{}_dt{}".format(self.solver_id, str(self.tmax), str(self.dt)), self.simdatalist)
         else:
-            print("Error: Must use run() to generate data")
+            raise NotImplementedError("Must use run() to generate data")
 
 
 

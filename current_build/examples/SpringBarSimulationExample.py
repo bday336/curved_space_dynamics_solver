@@ -11,7 +11,7 @@ from src.integrator_files.integrator_bank import gausss1, gausss2, gausss3, rads
 from src.test_system_simulations.test_system_bank import dynfunc_h3simbar, dynjac_h3simbar, dynfunc_s3simbar, dynjac_s3simbar
 from src.test_system_simulations.SpringBarSimulation import SpringBarSimulation
 
-### Example simulation of a rod body with rigid connection between vertices in 3-dimensional hyperbolic space (H3)
+### Example simulation of a rod body with spring potential connection between vertices in 3-dimensional hyperbolic space (H3)
 ### Using the rotational parameterization of hyperboloid model of H3 embedded in E^(3,1) (4D Minkowski Space)
 ###     x = sinh(a) * sin(b) * cos(g) 
 ###     y = sinh(a) * sin(b) * sin(g)
@@ -116,7 +116,7 @@ for b in range(np.shape(data1)[0]):
     counter += 1
 
 # Draw distance error as a function of simulation time
-ax2.plot(sim_test.t_arr,distdata1,marker = ".",color='k',linestyle = "None",label = "Radau s2")
+ax2.plot(sim_test.t_arr,distdata1,marker = ".",color='k',linestyle = "None",label = "Gauss s1")
 ax2.legend()
 ax2.set_title('Simulation Data')
 ax2.set_xlabel('t')
