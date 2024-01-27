@@ -1,14 +1,14 @@
 import numpy as np
 from src.integrator_files.integrator_bank import gausss1, gausss2, gausss3, rads2, rads3
 from src.test_system_simulations.test_system_bank import dynfunc_h3simbar, dynjac_h3simbar, dynfunc_s3simbar, dynjac_s3simbar
-from src.test_system_simulations.bump_geometry_files import bumpgeofunc, bumpgeojac
+from src.collision_function_bank import h3collision, s3collision
 
 
 # Simulation class setup
 
-class SpringBarSimulation:
+class VertexCollisionSimulation:
     """
-    A class used to perform rody body simulation with spring potential coupling
+    A class used to perform vertex collision simulation with two free vertices
 
     ...
 
@@ -19,14 +19,13 @@ class SpringBarSimulation:
         - currently supporting:
             * h3   = 3D hyperbolic space
             * s3   = 3D spherical space
-            * bump = 3D isotropic nonhomogeneous space (based on https://mathoverflow.net/questions/37651/riemannian-surfaces-with-an-explicit-distance-function)
 
     system_params : array
         the array of parameters describing system consisting of:
-            * v  = initial velocity field
-            * ks = stiffness of spring potential
-            * x  = rest length of spring potential
-            * m  = mass of vertices    
+            * m1 = mass of vertex 1
+            * m2 = mass of vertex 2
+            * r1 = radius of pseudo rigid shell of vertex 1
+            * r2 = radius of pseudo rigid shell of vertex 2 
 
     dt : float
         the simuation time step size
@@ -67,14 +66,13 @@ class SpringBarSimulation:
             - currently supporting:
                 * h3 = 3D hyperbolic space
                 * s3 = 3D spherical space
-                * bump = 3D isotropic nonhomogeneous space (based on https://mathoverflow.net/questions/37651/riemannian-surfaces-with-an-explicit-distance-function)
 
         system_params : array
             the array of parameters describing system consisting of:
-                * v  = initial velocity field
-                * ks = stiffness of spring potential
-                * x  = rest length of spring potential
-                * m  = mass of vertices    
+                * m1 = mass of vertex 1
+                * m2 = mass of vertex 2
+                * r1 = radius of pseudo rigid shell of vertex 1
+                * r2 = radius of pseudo rigid shell of vertex 2   
 
         dt : float
             the simuation time step size
@@ -95,7 +93,7 @@ class SpringBarSimulation:
         # Ambient Space
         self.ambient_geo = ambient_geo
 
-        # System Parameters [ v, ks, x, m ]
+        # System Parameters [ m1, m2, r1, r2 ]
         self.system_params  = system_params
 
         # Time Data
@@ -273,70 +271,114 @@ class SpringBarSimulation:
                                 dt=self.dt,
                                 tol=self.tol)
 
-            # Isotropic Nonhomogeneous Space (Sim)
-            if self.ambient_geo == "bump":
-                self.simdatalist[0] = self.system_ics.copy()
-
-                # Gauss 1-Step Method
-                if self.solver_id == "gs1":
-                    for step in range(self.t_arr.shape[0] - 1):
-                        self.simdatalist[step+1] = gausss1(
-                            startvec=self.simdatalist[step],
-                            params=self.system_params,
-                            dynfunc=bumpgeofunc,
-                            dynjac=bumpgeojac,
-                            dt=self.dt,
-                            tol=self.tol)
-                        
-                # Gauss 2-Step Method
-                if self.solver_id == "gs2":
-                    for step in range(self.t_arr.shape[0] - 1):
-                        self.simdatalist[step+1] = gausss2(
-                            startvec=self.simdatalist[step],
-                            params=self.system_params,
-                            dynfunc=bumpgeofunc,
-                            dynjac=dbumpgeojac,
-                            dt=self.dt,
-                            tol=self.tol)
-                        
-                # Gauss 3-Step Method
-                if self.solver_id == "gs3":
-                    for step in range(self.t_arr.shape[0] - 1):
-                        self.simdatalist[step+1] = gausss3(
-                            startvec=self.simdatalist[step],
-                            params=self.system_params,
-                            dynfunc=bumpgeofunc,
-                            dynjac=bumpgeojac,
-                            dt=self.dt,
-                            tol=self.tol)
-                        
-                # Radau 2-Step Method
-                if self.solver_id == "rs2":
-                    for step in range(self.t_arr.shape[0] - 1):
-                        self.simdatalist[step+1] = rads2(
-                            startvec=self.simdatalist[step],
-                            params=self.system_params,
-                            dynfunc=bumpgeofunc,
-                            dynjac=bumpgeojac,
-                            dt=self.dt,
-                            tol=self.tol)
-                        
-                # Radau 3-Step Method
-                if self.solver_id == "rs3":
-                    for step in range(self.t_arr.shape[0] - 1):
-                        self.simdatalist[step+1] = rads3(
-                            startvec=self.simdatalist[step],
-                            params=self.system_params,
-                            dynfunc=bumpgeofunc,
-                            dynjac=bumpgeojac,
-                            dt=self.dt,
-                            tol=self.tol)
-
 
             print("Simulation run completed!")
             self._have_run = True
         else:
             raise NotImplementedError("Must provide initial conditions via set_initial_conditions() before running simulation")
+
+
+
+
+
+
+    def __check_for_collision(self, t_index):
+
+
+        # H3 Collision Methods
+        def h3dist(v1,v2):
+            x1,y1,z1,w1 = v1
+            x2,y2,z2,w2 = v2
+            return arccosh(-x1*x2 - y1*y2 - z1*z2 + w1*w2)
+        
+        def rot2hyp(vec):
+            a,b,g = vec
+            return np.array([
+                sinh(a)*sin(b)*cos(g), 
+                sinh(a)*sin(b)*sin(g), 
+                sinh(a)*cos(b), 
+                cosh(a)])
+
+        def hyp2rot(vec): 
+            x,y,z,w = vec
+            return np.array([
+                arccosh(w), 
+                arccos(z/sinh(arccosh(w))), 
+                arctan2(y, x)])
+        
+        # S3 Collision Methods
+        def r4dist(v1, v2):
+            x1,y1,z1,w1 = v1
+            x2,y2,z2,w2 = v2
+            return arccos(x1*x2 + y1*y2 + z1*z2 + w1*w2)
+        
+        def rot2r4(vec): 
+            a,b,g = vec
+            return np.array([
+                sin(a)*sin(b)*cos(g),
+                sin(a)*sin(b)*sin(g), 
+                sin(a)*cos(b),
+                cos(a)])
+
+        def r42rot(vec): 
+            x,y,z,w = vec
+            return np.array([
+                arccos(w), 
+                arccos(z/sin(arccos(w))),
+                arctan2(y, x)])
+        
+
+        # H3 collision check
+        if self.ambient_geo == "h3" or self.ambient_geo == "H3":
+
+        if abs((distck3 - (r1 +r2))) < tol:
+            print("Collided s3 at step {}".format(step3))
+            dt_check = dt/2.
+            # tol = 1e-6
+            nump = 0
+
+            if abs((distck3 - (r1 +r2))) > tol:
+                print("Needed to find the collision position")
+            
+                dt_change = dt_check
+                while abs((distck3 - (r1 +r2))) > tol and nump < 100:
+                    precollision = gausss3(startvec=gs3simdatalist[step3-2],params=params,dynfunc=dynfunc_h3sim2ballcol,dynjac=dynjac_h3sim2ballcol,dt=dt_change)
+                    distck3 = h3dist(rot2hyp(precollision[0:3]),rot2hyp(precollision[3:6]))
+
+                    # Still overlaping
+                    if (distck3 - (r1 +r2)) < 0:
+                        dt_change = dt_change - dt_check #- dt_check*abs((distck3 - (r1 +r2))/(r1 +r2))/dt
+                        print("dt_check minus")
+                        print(dt_check)
+                    # Not overlapping
+                    elif (distck3 - (r1 +r2)) > 0:
+                        dt_check = dt_check/2
+                        dt_change = dt_change + dt_check #+ dt_check*abs((distck3 - (r1 +r2))/(r1 +r2))/dt
+                        print("dt_check plus")
+                        print(dt_check)
+                    print('separation')
+                    print(distck3 - (r1 +r2))
+                
+
+                    nump += 1
+
+                postcollision = h3collision(precollision,params)
+
+                gs3simdatalist[step3-1] = gausss3(startvec=postcollision,params=params,dynfunc=dynfunc_h3sim2ballcol,dynjac=dynjac_h3sim2ballcol,dt=dt-dt_change)
+                step3 -= 1
+                break
+            # If the collision happens to be within tolerance
+            else:
+                print("Collision occurred within tolerance")
+
+                postcollision = h3collision(gs3simdatalist[step3-1],params)
+
+
+                gs3simdatalist[step3] = gausss3(startvec=postcollision,params=params,dynfunc=dynfunc_h3sim2ballcol,dynjac=dynjac_h3sim2ballcol,dt=dt)
+        else:
+            # print("Not collided")
+            gs3simdatalist[step3] = gausss3(startvec=gs3simdatalist[step3-1],params=params,dynfunc=dynfunc_h3sim2ballcol,dynjac=dynjac_h3sim2ballcol,dt=dt)
+
 
     def output_data(self):
         """
@@ -351,11 +393,9 @@ class SpringBarSimulation:
 
         if self._have_run:
             if self.ambient_geo == "h3" or self.ambient_geo == "H3":
-                np.save("h3_r_{}_sim_tmax{}_dt{}".format(self.solver_id, str(self.tmax), str(self.dt)), self.simdatalist)
+                np.save("h3_c_{}_sim_tmax{}_dt{}".format(self.solver_id, str(self.tmax), str(self.dt)), self.simdatalist)
             if self.ambient_geo == "s3" or self.ambient_geo == "S3":
-                np.save("s3_r_{}_sim_tmax{}_dt{}".format(self.solver_id, str(self.tmax), str(self.dt)), self.simdatalist)
-            if self.ambient_geo == "bump":
-                np.save("bump_r_{}_sim_tmax{}_dt{}".format(self.solver_id, str(self.tmax), str(self.dt)), self.simdatalist)
+                np.save("s3_c_{}_sim_tmax{}_dt{}".format(self.solver_id, str(self.tmax), str(self.dt)), self.simdatalist)
         else:
             raise NotImplementedError("Must use run() to generate data")
 

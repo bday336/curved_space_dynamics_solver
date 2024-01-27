@@ -1,0 +1,72 @@
+
+# import { randomVec3Ball } from "./utils/random.js";
+# import {State} from "./Computation/State.js";
+
+# import {DataList} from "./Computation/DataList.js";
+
+# import {ConfigurationSpace} from "./ConfigurationSpace/ConfigurationSpace.js";
+# import {Simulation} from "./ConfigurationSpace/Simulation.js";
+# import {RenderSim} from "./Visualization/RenderSim.js";
+
+# import {euclidean} from "./AmbientSpace/ExampleSpaces/Euclidean.js";
+# import { hyperbolic } from "./AmbientSpace/ExampleSpaces/HypSpacePoincareBall.js";
+# import { spherical } from "./AmbientSpace/ExampleSpaces/SphericalStereoProj.js";
+# import { inhomogeneousNeg } from "./AmbientSpace/ExampleSpaces/InhomogeneousNeg.js";
+# import { inhomogeneousPos } from "./AmbientSpace/ExampleSpaces/InhomogeneousPos.js";
+# import { h2xe } from "./AmbientSpace/ExampleSpaces/H2xE.js";
+# import { s2xe } from "./AmbientSpace/ExampleSpaces/S2xE-Stereo.js";
+
+# Allow for package import
+import os, sys
+sys.path.append(os.path.dirname(os.getcwd()))
+sys.path.append(os.path.dirname(os.getcwd())+"/src")
+
+# Import Packages
+import numpy as np
+from src.Computation.State import State
+from src.AmbientSpace.Components.Geometry import Geometry
+
+# Set the ambient space for the simulation environment
+# ambientSpace = Euclidean
+
+# Build a configuration space
+#NumBalls = 3
+#MaxRad = ambientSpace.obstacle.size/5.;
+
+# let radii = [];
+# let masses = [];
+# for(let i=0; i<NumBalls; i++){
+#     let r = MaxRad * Math.random()+0.05;
+#     let m = 10.*r*r*r;
+#     radii.push(r);
+#     masses.push(m);
+# }
+
+# let configurationSpace = new ConfigurationSpace(masses, radii);
+# // let maxPos = 2.;
+# // let maxVel = 1;
+
+# //build the initial set of states for the system:
+# let iniCond = [];
+# for(let i=0; i<NumBalls; i++){
+#     // let pos = new randomVec3Ball(maxPos);
+#     // let vel = new randomVec3Ball(maxVel);
+#     // let state = new State(pos,vel);
+#     // iniCond.push(state);
+#     iniCond.push(ambientSpace.obstacle.generateState());
+# }
+# let states = new DataList(iniCond);
+
+# //make the simulation
+# let sim = new Simulation( states, 0.001 );
+
+# //make the visualization of the simulation
+# let viz = new RenderSim( sim, radii );
+
+# //send the visualization off to be rendered on the screen
+# export default { viz };
+
+
+# //export these to use as global variables in the DEFINITIONS of the classes
+# //Simulation, ConfigurationSpace, and RenderSim :0 :0 PLZ FIX
+# export { ambientSpace, configurationSpace };
