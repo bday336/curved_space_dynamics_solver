@@ -1,6 +1,6 @@
 import numpy as np
 from src.integrator_files.integrator_bank import gausss1, gausss2, gausss3, rads2, rads3
-from src.test_system_simulations.test_system_bank import dynfunc_h3simbar, dynjac_h3simbar, dynfunc_s3simbar, dynjac_s3simbar
+from src.test_system_simulations.test_system_bank import dynfunc_h3sim2ballcol, dynjac_h3sim2ballcol
 from src.collision_function_bank import h3collision, s3collision
 
 
@@ -107,10 +107,134 @@ class VertexCollisionSimulation:
         # Integrator to use
         self.solver_id = solver_id
         self.tol = 1e-15
+        self.collision_tol = 1e-8
+        self.max_collision_check = 100
 
         # Internal Flags
         self._have_ics = False
         self._have_run = False
+
+    def check_for_collision(self,step):
+
+        self.m1 = self.system_params[0]
+        self.m2 = self.system_params[1]
+        self.r1 = self.system_params[2]
+        self.r2 = self.system_params[3]
+
+        # H3 Collision Methods
+        def h3dist(v1,v2):
+            x1,y1,z1,w1 = v1
+            x2,y2,z2,w2 = v2
+            return np.arccosh(-x1*x2 - y1*y2 - z1*z2 + w1*w2)
+        
+        def rot2hyp(vec):
+            a,b,g = vec
+            return np.array([
+                np.sinh(a)*np.sin(b)*np.cos(g), 
+                np.sinh(a)*np.sin(b)*np.sin(g), 
+                np.sinh(a)*np.cos(b), 
+                np.cosh(a)])
+
+        def hyp2rot(vec): 
+            x,y,z,w = vec
+            return np.array([
+                np.arccosh(w), 
+                np.arccos(z/np.sinh(np.arccosh(w))), 
+                np.arctan2(y, x)])
+        
+        # S3 Collision Methods
+        def r4dist(v1, v2):
+            x1,y1,z1,w1 = v1
+            x2,y2,z2,w2 = v2
+            return np.arccos(x1*x2 + y1*y2 + z1*z2 + w1*w2)
+        
+        def rot2r4(vec): 
+            a,b,g = vec
+            return np.array([
+                np.sin(a)*np.sin(b)*np.cos(g),
+                np.sin(a)*np.sin(b)*np.sin(g), 
+                np.sin(a)*np.cos(b),
+                np.cos(a)])
+
+        def r42rot(vec): 
+            x,y,z,w = vec
+            return np.array([
+                np.arccos(w), 
+                np.arccos(z/np.sin(np.arccos(w))),
+                np.arctan2(y, x)])
+        
+
+        # H3 collision check
+        if self.ambient_geo == "h3" or self.ambient_geo == "H3":
+
+            self.distance_check = h3dist(rot2hyp(self.simdatalist[step][0:3]),rot2hyp(self.simdatalist[step][3:6]))
+
+            if abs((self.distance_check - (self.r1 + self.r2))) < self.collision_tol or self.distance_check - (self.r1 + self.r2) < 0.:
+                print("Collided s3 at step {}".format(step))
+                self.dt_check = self.dt/2.
+                # nump = 100
+
+                # If the collision does not happen to be within tolerance
+                if abs((self.distance_check - (self.r1 + self.r2))) > self.collision_tol:
+                    print("Needed to find the collision position")
+                
+                    self.dt_change = self.dt_check
+                    for a in range(self.max_collision_check):
+
+                        if abs((self.distance_check - (self.r1 + self.r2))) > self.collision_tol:
+                            self.precollision = gausss1(startvec = self.simdatalist[step-1],
+                                                        params   = self.system_params,
+                                                        dynfunc  = dynfunc_h3sim2ballcol,
+                                                        dynjac   = dynjac_h3sim2ballcol,
+                                                        dt       = self.dt_change,
+                                                        tol      = self.tol)
+                            
+                            self.distance_check = h3dist(rot2hyp(self.precollision[0:3]),rot2hyp(self.precollision[3:6]))
+
+                            # Still overlaping
+                            if self.distance_check - (self.r1 + self.r2) < 0.:
+                                self.dt_change = self.dt_change - self.dt_check #- dt_check*abs((distck3 - (r1 +r2))/(r1 +r2))/dt
+                                print("dt_check minus")
+                                print(self.dt_check)
+                            # Not overlapping
+                            elif self.distance_check - (self.r1 + self.r2) > 0.:
+                                self.dt_check = self.dt_check/2
+                                self.dt_change = self.dt_change + self.dt_check #+ dt_check*abs((distck3 - (r1 +r2))/(r1 +r2))/dt
+                                print("dt_check plus")
+                                print(self.dt_check)
+                            print('separation')
+                            print(self.distance_check - (self.r1 + self.r2))
+                            # print(a)
+                        else:
+                            break
+                
+
+                    self.postcollision = h3collision(self.precollision,self.system_params)
+
+                    self.simdatalist[step] = gausss1(startvec   = self.postcollision,
+                                                       params   = self.system_params,
+                                                       dynfunc  = dynfunc_h3sim2ballcol,
+                                                       dynjac   = dynjac_h3sim2ballcol,
+                                                       dt       = self.dt - self.dt_change,
+                                                       tol      = self.tol)
+
+                # If the collision happens to be within tolerance
+                else:
+                    print("Collision occurred within tolerance")
+
+                    self.postcollision = h3collision(self.simdatalist[step-1],self.system_params)
+
+
+                    self.simdatalist[step] = gausss1(startvec   = self.postcollision,
+                                                     params     = self.system_params,
+                                                     dynfunc    = dynfunc_h3sim2ballcol,
+                                                     dynjac     = dynjac_h3sim2ballcol,
+                                                     dt         = self.dt,
+                                                     tol        = self.tol)
+            else:
+                # print("Not collided")
+                pass
+
 
     def set_initial_conditions(self, system_ics):
         """
@@ -160,13 +284,14 @@ class VertexCollisionSimulation:
                 # Gauss 1-Step Method
                 if self.solver_id == "gs1":
                     for step in range(self.t_arr.shape[0] - 1):
+                        self.check_for_collision(step)
                         self.simdatalist[step+1] = gausss1(
-                            startvec=self.simdatalist[step],
-                            params=self.system_params,
-                            dynfunc=dynfunc_h3simbar,
-                            dynjac=dynjac_h3simbar,
-                            dt=self.dt,
-                            tol=self.tol)
+                            startvec    = self.simdatalist[step],
+                            params      = self.system_params,
+                            dynfunc     = dynfunc_h3sim2ballcol,
+                            dynjac      = dynjac_h3sim2ballcol,
+                            dt          = self.dt,
+                            tol         = self.tol)
                         
                 # Gauss 2-Step Method
                 if self.solver_id == "gs2":
@@ -276,108 +401,6 @@ class VertexCollisionSimulation:
             self._have_run = True
         else:
             raise NotImplementedError("Must provide initial conditions via set_initial_conditions() before running simulation")
-
-
-
-
-
-
-    def __check_for_collision(self, t_index):
-
-
-        # H3 Collision Methods
-        def h3dist(v1,v2):
-            x1,y1,z1,w1 = v1
-            x2,y2,z2,w2 = v2
-            return arccosh(-x1*x2 - y1*y2 - z1*z2 + w1*w2)
-        
-        def rot2hyp(vec):
-            a,b,g = vec
-            return np.array([
-                sinh(a)*sin(b)*cos(g), 
-                sinh(a)*sin(b)*sin(g), 
-                sinh(a)*cos(b), 
-                cosh(a)])
-
-        def hyp2rot(vec): 
-            x,y,z,w = vec
-            return np.array([
-                arccosh(w), 
-                arccos(z/sinh(arccosh(w))), 
-                arctan2(y, x)])
-        
-        # S3 Collision Methods
-        def r4dist(v1, v2):
-            x1,y1,z1,w1 = v1
-            x2,y2,z2,w2 = v2
-            return arccos(x1*x2 + y1*y2 + z1*z2 + w1*w2)
-        
-        def rot2r4(vec): 
-            a,b,g = vec
-            return np.array([
-                sin(a)*sin(b)*cos(g),
-                sin(a)*sin(b)*sin(g), 
-                sin(a)*cos(b),
-                cos(a)])
-
-        def r42rot(vec): 
-            x,y,z,w = vec
-            return np.array([
-                arccos(w), 
-                arccos(z/sin(arccos(w))),
-                arctan2(y, x)])
-        
-
-        # H3 collision check
-        if self.ambient_geo == "h3" or self.ambient_geo == "H3":
-
-        if abs((distck3 - (r1 +r2))) < tol:
-            print("Collided s3 at step {}".format(step3))
-            dt_check = dt/2.
-            # tol = 1e-6
-            nump = 0
-
-            if abs((distck3 - (r1 +r2))) > tol:
-                print("Needed to find the collision position")
-            
-                dt_change = dt_check
-                while abs((distck3 - (r1 +r2))) > tol and nump < 100:
-                    precollision = gausss3(startvec=gs3simdatalist[step3-2],params=params,dynfunc=dynfunc_h3sim2ballcol,dynjac=dynjac_h3sim2ballcol,dt=dt_change)
-                    distck3 = h3dist(rot2hyp(precollision[0:3]),rot2hyp(precollision[3:6]))
-
-                    # Still overlaping
-                    if (distck3 - (r1 +r2)) < 0:
-                        dt_change = dt_change - dt_check #- dt_check*abs((distck3 - (r1 +r2))/(r1 +r2))/dt
-                        print("dt_check minus")
-                        print(dt_check)
-                    # Not overlapping
-                    elif (distck3 - (r1 +r2)) > 0:
-                        dt_check = dt_check/2
-                        dt_change = dt_change + dt_check #+ dt_check*abs((distck3 - (r1 +r2))/(r1 +r2))/dt
-                        print("dt_check plus")
-                        print(dt_check)
-                    print('separation')
-                    print(distck3 - (r1 +r2))
-                
-
-                    nump += 1
-
-                postcollision = h3collision(precollision,params)
-
-                gs3simdatalist[step3-1] = gausss3(startvec=postcollision,params=params,dynfunc=dynfunc_h3sim2ballcol,dynjac=dynjac_h3sim2ballcol,dt=dt-dt_change)
-                step3 -= 1
-                break
-            # If the collision happens to be within tolerance
-            else:
-                print("Collision occurred within tolerance")
-
-                postcollision = h3collision(gs3simdatalist[step3-1],params)
-
-
-                gs3simdatalist[step3] = gausss3(startvec=postcollision,params=params,dynfunc=dynfunc_h3sim2ballcol,dynjac=dynjac_h3sim2ballcol,dt=dt)
-        else:
-            # print("Not collided")
-            gs3simdatalist[step3] = gausss3(startvec=gs3simdatalist[step3-1],params=params,dynfunc=dynfunc_h3sim2ballcol,dynjac=dynjac_h3sim2ballcol,dt=dt)
 
 
     def output_data(self):

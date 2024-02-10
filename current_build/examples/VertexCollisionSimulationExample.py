@@ -118,6 +118,7 @@ for b in range(np.shape(data1)[0]):
 
 # Draw distance error as a function of simulation time
 ax2.plot(sim_test.t_arr,distdata1,marker = ".",color='k',linestyle = "None",label = "Gauss s1")
+ax2.plot(sim_test.t_arr,np.full(sim_test.t_arr.shape,(r1+r2)),color='r',label = "Collision Boundary")
 ax2.legend()
 ax2.set_title('Simulation Data')
 ax2.set_xlabel('t')
