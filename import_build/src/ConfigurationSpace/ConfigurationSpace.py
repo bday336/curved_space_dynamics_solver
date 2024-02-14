@@ -48,6 +48,7 @@ class ConfigurationSpace:
             posi = dataList.data[i].pos
             # print(posi)
             disti = self.ambientspace.distToObstacle( posi )
+            # print("distance from wall")
             # print(disti)
             radi = self.radii[i]
             if( disti < radi ):
@@ -104,24 +105,26 @@ class ConfigurationSpace:
 
         for i in range(self.N):
             for j in range(self.N):
+                if i != j:
+                    distij = self.ambientspace.distance(states.data[i].pos, states.data[j].pos)
+                    # print("ball to ball distance")
+                    # print(distij)
+                    radij = self.radii[i]+self.radii[j]
 
-                distij = self.ambientspace.distance(states.data[i].pos, states.data[j].pos)
-                radij = self.radii[i]+self.radii[j]
-
-                if(distij<radij):
-                    # //the balls are intersecting: but are they approaching or moving apart?
-                    newPosi = states.data[i].clone().flow(0.001).pos
-                    newPosj = states.data[j].clone().flow(0.001).pos
-                    newDist = self.ambientspace.distance(newPosi,newPosj)
-                    # //if this new distance is less, it's an intersection with inadmissable tangent
-                    if(newDist<distij):
-                        indices.append([i,j])
+                    if(distij<radij):
+                        # //the balls are intersecting: but are they approaching or moving apart?
+                        newPosi = states.data[i].clone().flow(0.001).pos
+                        newPosj = states.data[j].clone().flow(0.001).pos
+                        newDist = self.ambientspace.distance(newPosi,newPosj)
+                        # //if this new distance is less, it's an intersection with inadmissable tangent
+                        if(newDist<distij):
+                            indices.append([i,j])
 
         if( len(indices) == 0 ):
             return indices
 
-        # print("ball collision")
-        # print(indices)
+        print("ball collision")
+        print(indices)
         return indices
 
     # //compute the gradient of the distance function
