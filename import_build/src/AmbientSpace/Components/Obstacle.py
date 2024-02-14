@@ -22,8 +22,8 @@ class Obstacle:
 
 
         # //generateState makes a random state IN COORDINATES that is not hitting the obstacle
-        if(generateState != None):
-            self.generateState = generateState
-        else:
-            self.generateState =  State(randomVec3Ball(1),randomVec3Ball(1))
+        # if(generateState != None):
+        #     self.generateState = generateState
+        # else:
+        #     self.generateState =  State(randomVec3Ball(1),randomVec3Ball(1))
 

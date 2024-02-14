@@ -1,33 +1,55 @@
-
-# import { Geometry } from "../Components/Geometry.js";
-# import {Model} from "../Components/Model.js";
-# import {Obstacle} from "../Components/Obstacle.js";
-
-# import {AmbientSpace} from "../AmbientSpace.js";
-
-# import {randomVec3Ball} from "../../utils/random.js";
-# import {State} from "../../Computation/State.js";
-
-# // -------------------------------------------------------------
-# //some euclidean geometry stuff:
-# // -------------------------------------------------------------
-
 import numpy as np
-# from src.AmbientSpace.Components.Geometry import Geometry
+
+from src.AmbientSpace.Components.Geometry import Geometry
+from src.AmbientSpace.Components.Model import Model
+from src.AmbientSpace.Components.Obstacle import Obstacle
+
+from src.AmbientSpace.AmbientSpace import AmbientSpace
+
+from src.Computation.State import State
+
+# // -------------------------------------------------------------
+# //some euclidean geometry stuff: (default to 3D)
+# // -------------------------------------------------------------
 
 
-class EuclideanGeometry:
-    def __init__(self):
-        pass
+def eucMetricTensor(pos):
+    return np.identity(3)
 
-    def metricTensor(self, pos):
-        return np.identity(3)
+def eucChristoffel(state):
+    return np.zeros(3)
 
-    def christoffel(self, state):
-        return np.zeros_like(state.vel)
+def eucDistance(pos1, pos2):
+    return np.sqrt(np.dot(np.subtract(pos1.copy(),pos2.copy()),np.subtract(pos1.copy(),pos2.copy())))
 
-    def distance(self, pos1, pos2):
-        return np.sqrt(np.dot(pos2-pos1,pos2-pos1))
+
+
+eucSpace = Geometry(
+    eucMetricTensor,
+    eucChristoffel,
+    eucDistance
+    )
+
+
+
+
+
+# // -------------------------------------------------------------
+# //model of Euclidean space : do nothing
+# // -------------------------------------------------------------
+
+
+def identityR3(coords):
+    return coords
+
+def unitScaling(pos):
+    return 1.
+
+
+eucModel = Model(identityR3,unitScaling)
+
+
+
 
 
 # // -------------------------------------------------------------
@@ -35,26 +57,26 @@ class EuclideanGeometry:
 # // -------------------------------------------------------------
 
 # //a sphere
-let R = 6.;
+R = 6.
 
-let distToSphere = function(pos){
-    return R-pos.length();
-}
-let sphereGeom = new SphereBufferGeometry(R,64,32);
+def distToSphere(pos):
+    return R-np.sqrt(pos[0]**2. + pos[1]**2. + pos[2]**2.)
 
-let generateSphState = function(){
-    let pos = randomVec3Ball(0.8*R);
-    let vel = randomVec3Ball(1);
-    return new State(pos,vel);
-}
+sphereGeom = None #new SphereBufferGeometry(R,64,32);
+
+generateSphState = None #function(){
+#     let pos = randomVec3Ball(0.8*R);
+#     # let vel = randomVec3Ball(1);
+#     return new State(pos,vel);
+# }
 
 
-let sphereObstacle = new Obstacle(
+sphereObstacle = Obstacle(
     distToSphere,
     sphereGeom,
     R,
     generateSphState
-);
+)
 
 
 
@@ -62,45 +84,43 @@ let sphereObstacle = new Obstacle(
 
 
 
-//a box
+# //a box
 
-let distToBox = function(pos){
-    let xWall = 6 - Math.abs(pos.x);
-    let yWall = 4. - Math.abs(pos.y);
-    let zWall = 4 - Math.abs(pos.z);
+def distToBox(pos):
+    xWall = 6. - abs(pos.x)
+    yWall = 4. - abs(pos.y)
+    zWall = 4. - abs(pos.z)
 
-    return Math.min(xWall,Math.min(yWall,zWall));
-
-}
-
-let boxGeom = new BoxBufferGeometry(12,8,8);
-
-let boxSize = 6.;
-
-let generateBoxState = function(){
-    let x = 6.*Math.random()-6;
-    let y = 4.*Math.random()-4;
-    let z = 4.*Math.random()-4;
-    let pos = new Vector3(x,y,z).multiplyScalar(0.8);
-    let vel = randomVec3Ball(1);
-    return new State(pos,vel);
-}
+    return min(xWall,min(yWall,zWall))
 
 
+boxGeom = None #new BoxBufferGeometry(12,8,8);
 
-let boxObstacle = new Obstacle(
+boxSize = 6.
+
+generateBoxState = None #function(){
+#     let x = 6.*Math.random()-6;
+#     let y = 4.*Math.random()-4;
+#     let z = 4.*Math.random()-4;
+#     let pos = new Vector3(x,y,z).multiplyScalar(0.8);
+#     let vel = randomVec3Ball(1);
+#     return new State(pos,vel);
+# }
+
+
+
+boxObstacle = Obstacle(
     distToBox,
     boxGeom,
     boxSize,
     generateBoxState,
-);
+)
 
 
 
 
 
 
-//package stuff up for export
-let euclidean = new AmbientSpace( eucSpace, eucModel, sphereObstacle);
+# //package stuff up for export
+euclidean = AmbientSpace( eucSpace, eucModel, sphereObstacle)
 
-export { euclidean };

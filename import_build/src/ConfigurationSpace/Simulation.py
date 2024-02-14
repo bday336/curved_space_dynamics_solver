@@ -7,88 +7,89 @@
 # //RIDICULOUS: need to figure out how not to have to import these :(
 # import{ ambientSpace, configurationSpace } from "../setup.js";
 
-
+from src.Computation.DataList import DataList
+from src.Computation.RungeKutta import RungeKutta
 
 class Simulation:
 
-    def __init__(self, states, stepSize):
-        self.states = states
-        self.stepSize =stepSize
+    def __init__(self, ambientSpace, configurationSpace, dataList, stepSize):
+        self.ambientSpace = ambientSpace
+        self.configurationSpace = configurationSpace
+
+        self.dataList = dataList
+        self.stepSize = stepSize
 
         # //to set when intersecting
-        self.collisions={
-            ball: None,
-            obstacle: None
-        }
+        self.ball_collisions = [] 
+        self.obstacle_collisions = []
+
+        self.data_container = []
+        self.data_container.append(self.dataList)
 
 
         # //build an integrator
         # //get the function which takes the derivative of each element of a stateList:
         # //using ambientSpace.acceleration will allow us to use external potentials without changing code
-        let derive = function(st){
-            let res = [];
-            for( let i=0; i<st.length; i++){
-                res.push(ambientSpace.acceleration(st[i]));
-            }
+        # self.derive = self.deriveFunc()
 
-            let accel = new DataList(res);
-            return accel;
-        }
+        self.integrator = RungeKutta(self.ambientSpace,self.stepSize)
 
-        this.integrator = new RungeKutta(derive,this.stepSize);
-
-    }
+    def deriveFunc(self, dataList):
+        temparr = []
+        for a in dataList.data:
+            temparr.append(self.ambientSpace.acceleration(a.clone()))
+        return DataList(temparr)
 
 
-    detectCollision(){
+    def detectCollision(self):
 
-        this.collisions.obstacle = configurationSpace.obstacleCollisions(this.states);
-        this.collisions.ball = configurationSpace.ballCollisions(this.states);
+        self.obstacle_collisions = self.configurationSpace.obstacleCollisions(self.dataList)
+        self.ball_collisions = self.configurationSpace.ballCollisions(self.dataList)
 
-        if(this.collisions.obstacle !=null || this.collisions.ball != null ){
-            return true;
-        }
+        # print("obstacle detection")
+        # print(self.obstacle_collisions)
 
-        return false;
+        # print("ball detection")
+        # print(self.ball_collisions)
 
-    }
-
-
-    smoothDynamics(){
-        this.states = this.integrator.step(this.states);
-    }
-
-    collisionDynamics(){
-
-        //get the normal vector to the boundary of configuration space
-        let bdyNormal = configurationSpace.boundaryNormal(
-            this.states,
-            this.collisions
-        );
-
-        //update the state by reflecting in the boundary normal
-        //with respect to the configuration space's metric
-        this.states = configurationSpace.reflectIn(this.states, bdyNormal);
-    }
-
-    step(){
-
-        //get the points of collision, if there are any
-        let collide = this.detectCollision();
-
-        if( collide ){
-            this.collisionDynamics();
-        }
-
-        else {
-            //then after they've been resolved, run smooth dynamics
-            this.smoothDynamics();
-        }
-
-    }
-
-}
+        # Collision detected
+        if len(self.obstacle_collisions) != 0 or len(self.ball_collisions) != 0:
+            return True
+        # No collision detected
+        else:
+            return False
 
 
+    def smoothDynamics(self):
+        # print(self.dataList)
+        self.dataList = self.integrator.step(self.dataList)
+        # print(self.dataList)
 
-export { Simulation };
+    def collisionDynamics(self):
+
+        # //get the normal vector to the boundary of configuration space
+        bdyNormal = self.configurationSpace.boundaryNormal(
+            self.dataList,
+            self.ball_collisions,
+            self.obstacle_collisions
+        )
+
+        # //update the state by reflecting in the boundary normal
+        # //with respect to the configuration space's metric
+        self.dataList = self.configurationSpace.reflectIn(self.dataList, bdyNormal)
+
+    def step(self):
+
+        # //get the points of collision, if there are any
+        collide = self.detectCollision()
+        # print(collide)
+
+        if collide :
+            self.collisionDynamics()
+            self.data_container.append(self.dataList)
+
+        else:
+            # //then after they've been resolved, run smooth dynamics
+            self.smoothDynamics()
+            self.data_container.append(self.dataList)
+

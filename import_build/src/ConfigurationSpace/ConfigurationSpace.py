@@ -15,18 +15,18 @@ import numpy as np
 class ConfigurationSpace:
 
     def __init__(self, masses, radii, ambientspace):
-        self.N = masses.length
+        self.N = len(masses)
         self.masses = masses
         self.radii = radii
         self.ambientspace = ambientspace
 
 
     # //get the dot product with respect to the kinetic energy metric
-    def dot(self, states1, states2 ):
+    def dot(self, dataList1, dataList2 ):
         dot = 0
         for i in range(self.N):
             # //add up the dot product for each individual ball
-            dot += 1/2 * self.masses[i] * self.ambientspace.dot(states1[i],states2[i])
+            dot += 1/2 * self.masses[i] * self.ambientspace.dot(dataList1.data[i],dataList2.data[i])
         return dot
 
     # //norm of the kinetic energy metric
@@ -42,25 +42,28 @@ class ConfigurationSpace:
 
     # //detect which balls collide with the ambient space's obstacle.
     # //output the indices of these balls as a list:
-    def obstacleCollisions(self, states ):
+    def obstacleCollisions(self, dataList ):
         indices = []
         for i in range(self.N):
-            posi = states[i].pos
+            posi = dataList.data[i].pos
+            # print(posi)
             disti = self.ambientspace.distToObstacle( posi )
+            # print(disti)
             radi = self.radii[i]
             if( disti < radi ):
                 # //the balls is intersecting the boundary:
                 # //but, see if it is heading outward or inward
-                newPos = states[i].clone().flow(0.001).pos
-                newDist = self.ambientpace.distToObstacle(newPos)
+                newPos = dataList.data[i].clone().flow(0.001).pos
+                newDist = self.ambientspace.distToObstacle(newPos)
                 # //if this new distance is less, it's an intersection with inadmissable tangent
                 if(newDist<disti):
-                    indices.push(i)
-        if(indices.length==0):
-            return 
+                    indices.append(i)
+        if(len(indices)==0):
+            return indices
 
 
-        print(indices)
+        # print("obstacle collision")
+        # print(indices)
         return indices
 
     # //compute the gradient of the distance function to the boundary
@@ -68,18 +71,19 @@ class ConfigurationSpace:
     # //(instead; could take the gradient of the overall distance function which
     # //is a minimum over all distances to boundary, but this would have TONS
     # //of unnecessary computation)
-    def obstacleGradient(self, states, indices):
+    def obstacleGradient(self, dataList, indices):
 
         # //make a new state with same positions but zeroed out velocity:
-        grad = states.clone()
+        grad = dataList.clone()
         for i in range(self.N):
-            grad[i].vel=np.array([0,0,0])
+            grad.data[i].vel=np.array([0,0,0])
 
-        if(indices.length != 0):
+        # print(indices)
+        if(len(indices) != 0):
             # //replace the velocity with the gradient in the correct index slots
-            for index in range(indices.length):
+            for index in range(len(indices)):
                 i = indices[index]
-                posi = states[i].pos
+                posi = dataList.data[i].pos
 
                 # //with respect to the metric g on the ambient space X
                 geomGradi = self.ambientspace.gradient(self.ambientspace.obstacle.distance, posi)
@@ -89,7 +93,7 @@ class ConfigurationSpace:
                 gradi = geomGradi.clone().multiplyScalar(2/self.masses[i])
 
                 # //replace this in the gradient list:
-                grad[i] = gradi
+                grad.data[i] = gradi
 
         return grad
 
@@ -101,47 +105,47 @@ class ConfigurationSpace:
         for i in range(self.N):
             for j in range(self.N):
 
-                distij = self.ambientspace.distance(states[i].pos, states[j].pos)
+                distij = self.ambientspace.distance(states.data[i].pos, states.data[j].pos)
                 radij = self.radii[i]+self.radii[j]
 
                 if(distij<radij):
                     # //the balls are intersecting: but are they approaching or moving apart?
-                    newPosi = states[i].clone().flow(0.001).pos
-                    newPosj = states[j].clone().flow(0.001).pos
+                    newPosi = states.data[i].clone().flow(0.001).pos
+                    newPosj = states.data[j].clone().flow(0.001).pos
                     newDist = self.ambientspace.distance(newPosi,newPosj)
                     # //if this new distance is less, it's an intersection with inadmissable tangent
                     if(newDist<distij):
-                        indices.push([i,j])
+                        indices.append([i,j])
 
-        if( indices.length == 0 ):
-            return
+        if( len(indices) == 0 ):
+            return indices
 
-        print(indices)
+        # print("ball collision")
+        # print(indices)
         return indices
-
 
     # //compute the gradient of the distance function
     # //only compute for specified pairs [i,j] of balls, then add: rest are zero.
-    def ballGradient(self, states, indices):
+    def ballGradient(self, dataList, indices):
 
         # //make a new state with same positions but zeroed out velocity:
-        grad = states.clone()
+        grad = dataList.clone()
         for n in range(self.N):
-            grad[n].vel=np.array([0,0,0])
+            grad.data[n].vel=np.array([0,0,0])
 
         # //replace the velocity with the gradient in the correct index slots
-        if(indices.length != 0):
-            for index in range(indices.length):
+        if(len(indices) != 0):
+            for index in range(len(indices)):
 
                 ij = indices[index]
                 i = ij[0]
                 j = ij[1]
 
-                posi = states[i].pos
-                posj = states[j].pos
+                posi = dataList.data[i].pos
+                posj = dataList.data[j].pos
 
                 # //distance function to the ball "i":
-                def disti(self,pos):
+                def disti(pos):
                     return self.ambientspace.distance(posi, pos)
 
                 # //the gradient of this function, evaluated at position j
@@ -150,10 +154,10 @@ class ConfigurationSpace:
                 # //the kinetic energy metric for the jth particle is the Riemannian metric g,
                 # //scaled by 1/2*m: thus the gradient is the g-gradient scaled by 2/m
                 # //replace the gradient at j with this:
-                grad[j] = gradjdisti.clone().multiplyScalar(2/self.masses[j])
+                grad.data[j] = gradjdisti.clone().multiplyScalar(2/self.masses[j])
 
                 # //distance function to the ball "j":
-                def distj(self, pos):
+                def distj(pos):
                     return self.ambientspace.distance(posj, pos)
 
                 # //the gradient of this function, evaluated at position j
@@ -162,14 +166,15 @@ class ConfigurationSpace:
                 # //the kinetic energy metric for the jth particle is the Riemannian metric g,
                 # //scaled by 1/2*m: thus the gradient is the g-gradient scaled by 2/m
                 # //replace the gradient at i with this:
-                grad[i] = gradidistj.clone().multiplyScalar(2/self.masses[i])
+                grad.data[i] = gradidistj.clone().multiplyScalar(2/self.masses[i])
 
         return grad
 
 
-    def boundaryNormal(self, states, collisionIndices):
-        grad1 = self.obstacleGradient(states, collisionIndices.obstacle)
-        grad2 = self.ballGradient(states, collisionIndices.ball)
+    def boundaryNormal(self, states, ball_collisionIndices, obstacle_collisionIndices):
+        # print(obstacle_collisionIndices)
+        grad1 = self.obstacleGradient(states, obstacle_collisionIndices)
+        grad2 = self.ballGradient(states, ball_collisionIndices)
 
         # //add them together
         grad = grad1.clone().add(grad2)

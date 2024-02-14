@@ -4,8 +4,9 @@
 # and an update to .acceleration() to not just be geodesic acceleration but also use this.gradient(this.potential(pos))
 
 class AmbientSpace:
-    def __init__(self, geometry, obstacle):
+    def __init__(self, geometry, model, obstacle):
         self.geometry = geometry
+        self.model = model
         self.obstacle = obstacle
 
     # For adding force field
@@ -19,6 +20,11 @@ class AmbientSpace:
     # Gradient with respect to geometry
     def gradient(self, fn, pos):
         return self.geometry.gradient(fn,pos)
+
+    # Projection from model for visualization
+    def toR3(self, pos):
+        posR3 = self.model.toR3(pos)
+        return {pos: posR3, scaling: self.model.relativeScaling(posR3)}
 
     # Distance function of geometry
     def distance(self, pos1, pos2):

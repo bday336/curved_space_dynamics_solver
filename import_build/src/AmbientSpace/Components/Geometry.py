@@ -27,8 +27,11 @@ class Geometry:
         v1 = state1.vel.copy()
         v2 = state2.vel.copy()
 
+        # Apply this to the second vector
+        gv2 = mat @ v2
+
         # Compute the dot product
-        return v1 @ (v2 @ mat)
+        return v1.dot(gv2)
 
 
     # Get a basis for the tangent space at a point ( in coordinates )
@@ -36,7 +39,7 @@ class Geometry:
     # @@@@ right now, this is the coordinate basis, and we use the metric tensor
     # @@@@ in the gradient: could instead do Gram-Schmidt here then calculate
     # @@@@ gradient as differential directly in that basis.
-    def tangentBasis(pos):
+    def tangentBasis(self,pos):
         b1 = State(pos, np.array([1,0,0]))
         b2 = State(pos, np.array([0,1,0]))
         b3 = State(pos, np.array([0,0,1]))
@@ -67,12 +70,12 @@ class Geometry:
         #//now the differential needs to be converted from a covector to a vector
         #//using the hyperbolic metric:
         metric = self.metricTensor(pos)
-        if(abs(metric.determinant())<0.00001):
+        if(abs(np.linalg.det(metric))<0.00001):
             print('Warning! Metric Tensor Near Singular')
             print(pos)
             print(metric)
 
-        invMetric = metric.clone().invert()
-        differential.vel = differential.vel.clone().applyMatrix3(invMetric)
+        invMetric = np.linalg.inv(metric.copy())
+        differential.vel = invMetric @ differential.vel.copy()
 
         return differential

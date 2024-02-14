@@ -10,7 +10,7 @@
 # // .clone(), as well as the  vector space operations:
 # // .add(), .sub() . multiplyScalar(), .applyMatrix3()
 
-
+import numpy as np
 
 
 class dState:
@@ -18,8 +18,8 @@ class dState:
     # //build a dState from the input of an object storing velocity data
     # //and an object storing acceleration data
     def __init__(self, vel, acc):
-        self.vel = vel.copy()
-        self.acc = acc.copy()
+        self.vel=vel.copy()
+        self.acc=acc.copy()
 
     # //make a copy of a given dState (not just reference it in memory)
     # //and return the copy
@@ -29,16 +29,19 @@ class dState:
 
     # //add the velocity AND of a given state to the current
     def add(self, dState):
-        self.vel = self.vel + dState.vel
-        self.acc = self.acc + dState.acc
+        self.vel = np.add(self.vel, dState.vel)
+        self.acc = np.add(self.acc, dState.acc)
+        return self
 
     # //subtract the velocity AND acceleration of a given state from the current
     def sub(self, dState ):
-        self.vel = self.vel - dState.vel
-        self.acc = self.acc - dState.acc
+        self.vel = np.subtract(self.vel, dState.vel )
+        self.acc = np.subtract(self.acc, dState.acc )
+        return self
 
 
     # //scale the velocity AND acceleration of the current state by a factor
     def multiplyScalar (self, k ):
-        self.vel = self.vel * k 
+        self.vel = self.vel * k
         self.acc = self.acc * k 
+        return self
