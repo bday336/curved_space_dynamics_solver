@@ -12,12 +12,12 @@ from src.Computation.RungeKutta import RungeKutta
 
 class Simulation:
 
-    def __init__(self, ambientSpace, configurationSpace, dataList, sysparam, stepSize):
+    def __init__(self, ambientSpace, configurationSpace, dataList, stepSize):
         self.ambientSpace = ambientSpace
         self.configurationSpace = configurationSpace
 
         self.dataList = dataList
-        self.sysparam = sysparam
+        # self.sysparam = sysparam
         self.stepSize = stepSize
 
         # //to set when intersecting

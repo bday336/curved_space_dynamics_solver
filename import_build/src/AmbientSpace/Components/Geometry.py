@@ -6,30 +6,59 @@ from src.Computation.dState import dState
 
 # Class for storing ambient space geometry
 class Geometry:
+    """
+    A class used to information about ambient space geometry
+
+    ...
+
+    Attributes
+    ----------
+    metricTensor : function
+        function to generate 2D matrix representation of metric tensor at given position
+
+    christoffel : function
+        function to generate the terms corresponding to christoffel terms for acceleration of each vertex
+
+    distance : function
+        function to calculate the distance between two points in the ambient space
+
+    Methods
+    -------
+    covariantAcceleration(state)
+        Takes covariant derivative of state
+        Returns dState storing initial velocity and covariant coordinates (second derivatives of coordinates) of the covariant derivatives
+
+    dot(state1, state2)
+        Calculates the dot product of velocity vectors for specificed states using the metric tensor
+        Returns scalar value of dot product
+
+    tangentBasis(pos)
+        Calculates a basis for the tangent space at a point (in coordinates)
+        Returns array of basis vectors
+
+    gradient(fn, pos)
+        Calculate the gradient of function fn at position pos
+        Returns differential (gradient) of function at given point
+    """
 
     def __init__(self, metricTensor, christoffel, distance):
         self.metricTensor = metricTensor
-        self.christoffel = christoffel
-        self.distance = distance
+        self.christoffel  = christoffel
+        self.distance     = distance
 
 
-    # Take covariant derivative of a state
-    # return dState storing the initial velocity, and the covariant coordinates (x'', y'', z'')= of the covariant derivative
     def covariantAcceleration(self, state):
         vel = state.vel
         acc = self.christoffel(state)
         return dState(vel,acc)
 
-    # Calculate the dot product of two vectors, using the  metric tensor
+
     def dot(self, state1, state2):
         mat = self.metricTensor(state1.pos)
-
         v1 = state1.vel.copy()
         v2 = state2.vel.copy()
-
         # Apply this to the second vector
         gv2 = mat @ v2
-
         # Compute the dot product
         return v1.dot(gv2)
 
@@ -68,7 +97,7 @@ class Geometry:
         differential.add(b2)
 
         #//now the differential needs to be converted from a covector to a vector
-        #//using the hyperbolic metric:
+        #//using the inverse metric:
         metric = self.metricTensor(pos)
         if(abs(np.linalg.det(metric))<0.00001):
             print('Warning! Metric Tensor Near Singular')
