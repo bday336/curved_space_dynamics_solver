@@ -1,29 +1,59 @@
-
-# import {DataList} from "../Computation/DataList.js";
-# import {RungeKutta} from "../Computation/RungeKutta.js";
-
-
-
-# //RIDICULOUS: need to figure out how not to have to import these :(
-# import{ ambientSpace, configurationSpace } from "../setup.js";
-
 from src.Computation.DataList import DataList
 from src.Computation.RungeKutta import RungeKutta
 
 class Simulation:
+    """
+    A class used to store information about simulation
 
-    def __init__(self, ambientSpace, configurationSpace, dataList, stepSize):
+    ...
+
+    Attributes
+    ----------
+    ambientSpace : object
+        AmbientSpace object describing ambient space containing system
+
+    dataList : object
+        DataList object describing system (collection of vertex information)
+
+    configurationSpace : object
+        ConfigurationSpace object describing configuration space of simulation systems
+
+    stepSize : float
+        time step for each integration step
+
+    Methods
+    -------
+    detectCollision()
+        Check to determine if any collisions have occurred between vertices or between vertices and obstacles
+        Returns boolean
+
+    smoothDynamics()
+        Perform one step of numerical integration
+        Updates self.dataList to post integration values
+
+    collisionDynamics()
+        Calculate boundary normal in configuration space and update self.dataList to post collision values
+        Updates self.dataList to post collision values
+
+    step()
+        Perform one step of simulation:
+        1) Detect if collision present
+        2) if collision present run collsionDyamics()
+        3) if no collision present run smoothDynamics()
+    """
+
+    def __init__(self, ambientSpace, dataList, configurationSpace, stepSize):
         self.ambientSpace = ambientSpace
+        self.dataList = dataList
         self.configurationSpace = configurationSpace
 
-        self.dataList = dataList
-        # self.sysparam = sysparam
         self.stepSize = stepSize
 
         # //to set when intersecting
         self.ball_collisions = [] 
         self.obstacle_collisions = []
 
+        # Container for all simulation data
         self.data_container = []
         self.data_container.append(self.dataList)
 
@@ -35,11 +65,11 @@ class Simulation:
 
         self.integrator = RungeKutta(self.ambientSpace,self.stepSize)
 
-    def deriveFunc(self, dataList):
-        temparr = []
-        for a in dataList.data:
-            temparr.append(self.ambientSpace.acceleration(a.clone()))
-        return DataList(temparr)
+    # def deriveFunc(self, dataList):
+    #     temparr = []
+    #     for a in dataList.data:
+    #         temparr.append(self.ambientSpace.acceleration(a.clone()))
+    #     return DataList(temparr)
 
 
     def detectCollision(self):

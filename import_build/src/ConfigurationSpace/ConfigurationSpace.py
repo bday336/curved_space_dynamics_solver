@@ -13,6 +13,65 @@ import numpy as np
 
 
 class ConfigurationSpace:
+    """
+    A class used to store information about configuration space of system
+
+    ...
+
+    Attributes
+    ----------
+    masses : array
+        array of masses for each vertex in the system
+
+    radii : array
+        array of radii of pseudosphere of each vertex in the system
+
+    ambientspace : object
+        AmbientSpace object describing ambient space containing system
+
+    Methods
+    -------
+    dot(dataList1, dataList2)
+        Calculate the dot product between dataList1 and dataList2 (statewise) with respect to the kinetic energy metric
+        Returns scalar dot product value
+
+    norm(dataList)
+        Calculate the norm of each element in dataList with respect to kinetic energy metric
+        Returns scalar norm value
+
+    normalize(dataList)
+        Calculate normalized dataList (normalize each state)
+        Returns DataList object of normalized states from dataList
+
+    obstacleCollisions(dataList)
+        Generate list of vertices colliding with obstacles in the ambient space
+        Returns array of indices cooresponding with which vertices have collided with obstacles
+
+    obstacleGradient(dataList, indices)
+        Compute the gradient of distance function to the boundary (vertex-obstacle collision) for only collided vertices in dataList listed by indices
+        Returns DataList object clone of dataList with velocity of collided vertices updated via kinetic energy gradient
+
+    ballCollisions(dataList)
+        Generate list of vertices in dataList colliding with each other
+        Returns array of indices cooresponding with which vertices have collided with each other
+
+    ballGradient(dataList, indices)
+        Compute the gradient of distance function to the boundary (vertex-vertex collision) for only collided vertices in dataList listed by indices
+        Returns DataList object clone of dataList with velocity of collided vertices updated via kinetic energy gradient
+
+    boundaryNormal(dataList, ball_collisionIndices, obstacle_collisionIndices)
+        Calculate normal to boundary corresponding to all collision events (vertex-obstacle and vertex-vertex collision)
+        Returns DataList object corresponding to all collision gradients (normalized)
+
+    momentum(dataList)
+        Calculate total momentum of all vertices in dataList (only for debugging in E3)
+        Returns scalar of total momentum
+
+    reflectIn(dataList, normal)
+        Generate a clone of dataList updated corresponding to reflecting with boundary with normal vector given by normal
+        Returns DataList object of reflecting dataList via normal to boundary
+    """
+
 
     def __init__(self, masses, radii, ambientspace):
         self.N = len(masses)
@@ -30,13 +89,12 @@ class ConfigurationSpace:
         return dot
 
     # //norm of the kinetic energy metric
-    def norm(self, states ):
-        return np.sqrt(self.dot(states, states))
+    def norm(self, dataList ):
+        return np.sqrt(self.dot(dataList, dataList))
 
-    def normalize(self, states ):
-        len = self.norm(states)
-        res = states.clone().multiplyScalar(1/len)
-
+    def normalize(self, dataList ):
+        len = self.norm(dataList)
+        res = dataList.clone().multiplyScalar(1/len)
         return res
 
 
@@ -61,8 +119,6 @@ class ConfigurationSpace:
                     indices.append(i)
         if(len(indices)==0):
             return indices
-
-
         # print("obstacle collision")
         # print(indices)
         return indices
@@ -100,21 +156,21 @@ class ConfigurationSpace:
 
 
 
-    def ballCollisions(self, states ):
+    def ballCollisions(self, dataList ):
         indices = []
 
         for i in range(self.N):
             for j in range(self.N):
                 if i != j:
-                    distij = self.ambientspace.distance(states.data[i].pos, states.data[j].pos)
+                    distij = self.ambientspace.distance(dataList.data[i].pos, dataList.data[j].pos)
                     # print("ball to ball distance")
                     # print(distij)
                     radij = self.radii[i]+self.radii[j]
 
                     if(distij<radij):
                         # //the balls are intersecting: but are they approaching or moving apart?
-                        newPosi = states.data[i].clone().flow(0.001).pos
-                        newPosj = states.data[j].clone().flow(0.001).pos
+                        newPosi = dataList.data[i].clone().flow(0.001).pos
+                        newPosj = dataList.data[j].clone().flow(0.001).pos
                         newDist = self.ambientspace.distance(newPosi,newPosj)
                         # //if this new distance is less, it's an intersection with inadmissable tangent
                         if(newDist<distij):
@@ -174,10 +230,10 @@ class ConfigurationSpace:
         return grad
 
 
-    def boundaryNormal(self, states, ball_collisionIndices, obstacle_collisionIndices):
+    def boundaryNormal(self, dataList, ball_collisionIndices, obstacle_collisionIndices):
         # print(obstacle_collisionIndices)
-        grad1 = self.obstacleGradient(states, obstacle_collisionIndices)
-        grad2 = self.ballGradient(states, ball_collisionIndices)
+        grad1 = self.obstacleGradient(dataList, obstacle_collisionIndices)
+        grad2 = self.ballGradient(dataList, ball_collisionIndices)
 
         # //add them together
         grad = grad1.clone().add(grad2)
@@ -187,24 +243,24 @@ class ConfigurationSpace:
     # //this is MEANINGLESS outside of Euclidean space:
     # //this is only used for debugging: to confirm momentum is conserved
     # //with ball-on-ball collisions (but not collisions with the boundary, obv)
-    def momentum(self, state):
+    def momentum(self, dataList):
         p = np.array([0,0,0])
         for i in range(self.N):
-            p.add(state[i].vel.clone().multiplyScalar(self.masses[i]))
+            p.add(dataList.data[i].vel.clone().multiplyScalar(self.masses[i]))
 
         return p
 
 
     # //reflect a state in a normal vector
-    # //states is the current tangent vector to configuration space (states of all the balls)
+    # //dataList is the current tangent vector to configuration space (dataList of all the balls)
     # //normal is the normal vector to the boundary of configuration space
-    def reflectIn(self, states, normal):
+    def reflectIn(self, dataList, normal):
 
-        dot = self.dot(states,normal)
+        dot = self.dot(dataList,normal)
         norm2 = self.dot(normal,normal)
 
         coef = 2.*dot/norm2
 
-        result =  states.clone().sub(normal.clone().multiplyScalar(coef))
+        result =  dataList.clone().sub(normal.clone().multiplyScalar(coef))
 
         return result

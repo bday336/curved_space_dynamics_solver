@@ -1,17 +1,3 @@
-# // import {
-# //     Matrix3,
-# //     SphereBufferGeometry,
-# //     BoxBufferGeometry,
-# //     Vector3,
-# //     Vector4
-# // } from "../../../3party/three/build/three.module.js";
-
-# // import { Geometry } from "../Components/Geometry.js";
-# // import {Model} from "../Components/Model.js";
-# // import {Obstacle} from "../Components/Obstacle.js";
-
-# // import {AmbientSpace} from "../AmbientSpace.js";
-
 import numpy as np
 
 from src.AmbientSpace.Components.Geometry import Geometry
@@ -23,22 +9,21 @@ from src.AmbientSpace.AmbientSpace import AmbientSpace
 from src.Computation.State import State
 
 # // -------------------------------------------------------------
-# //some geometry stuff:
+# // 3-Dimensional Hyperbolic Space Information (Hyperboloid Model)
 # // -------------------------------------------------------------
 
+# // -------------------------------------------------------------
+# // Helper Functions
+# // -------------------------------------------------------------
 
 def minkowskiDot(u,v):
     return u[3]*v[3] - ( u[0]*v[0] + u[1]*v[1] + u[2]*v[2] )
 
-
 # //distance on hyperboloid:
 def hyperboloidDistance(u,v):
-    # print("check dotproduct")
-    # print(abs(minkowskiDot(u,v)))
     return np.arccosh(abs(minkowskiDot(u,v)))
 
-
-# //coordinates mapping onto the hyperboloid model of H3
+# //coordinates mapping onto the hyperboloid model of H3 in 4D minkowski space
 def coords(pos):
 
     alpha = pos[0]
@@ -59,7 +44,9 @@ def coords(pos):
 
     return np.array([x,y,z,w])
 
-
+# // -------------------------------------------------------------
+# // Geometry Information
+# // -------------------------------------------------------------
 
 def hypMetricTensor(pos):
 
@@ -89,14 +76,6 @@ def hypMetricTensor(pos):
         [0,0,g33]
     ])
 
-
-def hypDistance(pos1, pos2):
-
-    u = coords(pos1)
-    v = coords(pos2)
-
-    return hyperboloidDistance(u,v)
-
 def hypChristoffel(state):
 
     pos = state.pos.copy()
@@ -124,6 +103,13 @@ def hypChristoffel(state):
 
     return acc
 
+def hypDistance(pos1, pos2):
+
+    u = coords(pos1)
+    v = coords(pos2)
+
+    return hyperboloidDistance(u,v)
+
 
 hypSpace = Geometry(
     hypMetricTensor,
@@ -131,46 +117,36 @@ hypSpace = Geometry(
     hypDistance
     )
 
-
-
-
-
 # // -------------------------------------------------------------
-# //model of Euclidean space : do nothing
+# // Model Information
 # // -------------------------------------------------------------
-
-# //scale of the model on the screen
-modelScale = 6.
-
 
 def toPoincareBall(coord):
 
-    p = coords(coord);
+    p = coords(coord)
 
     x, y, z, w = p
 
-    scale = modelScale / (1. + w)
-
-    return np.array([x,y,z]) * scale
-
-
+    return np.array([x,y,z]) / (1. + w)
 
 def pbScaling(pos):
+    modelScale = 6.
     len2 = pos[0]**2. + pos[1]**2. + pos[2]**2.
     scale = modelScale**2. - len2
     return 4. * scale / (modelScale**2.)
 
-
-hypModel = Model(toPoincareBall,pbScaling)
-
-
-
+hypModel = Model(
+    toPoincareBall,
+    pbScaling
+    )
 
 # // -------------------------------------------------------------
-# //obstacles to contain balls in Euclidean Space
+# // Obstacle/Bounding Ball Information
 # // -------------------------------------------------------------
 
-# //a sphere of a fixed radius
+# // Sphere Bounding Box
+
+# Default bounding box size (radius)
 obstacleSize =2.
 
 def distToSphere(pos):
@@ -182,25 +158,10 @@ def distToSphere(pos):
     return obstacleSize - dist
 
 
-rad = modelScale * np.tanh(obstacleSize)
-
-sphereGeom = None #new SphereBufferGeometry(rad, 64, 32);
-
 sphereObstacle = Obstacle(
     distToSphere,
-    sphereGeom,
     obstacleSize
 )
 
-
-
-
-
-
-
 # //package stuff up for export
 hyperbolic = AmbientSpace( hypSpace, hypModel, sphereObstacle)
-
-# export { hyperbolic };
-
-

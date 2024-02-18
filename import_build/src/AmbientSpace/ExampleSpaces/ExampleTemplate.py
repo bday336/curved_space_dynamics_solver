@@ -9,27 +9,27 @@ from src.AmbientSpace.AmbientSpace import AmbientSpace
 from src.Computation.State import State
 
 # // -------------------------------------------------------------
-# // 3-Dimensional Euclidean Space Information
+# // Example Space Information Template
 # // -------------------------------------------------------------
 
 # // -------------------------------------------------------------
 # // Geometry Information
 # // -------------------------------------------------------------
 
-def eucMetricTensor(pos):
-    return np.identity(3)
+def MetricTensor(pos):
+    return 
 
-def eucChristoffel(state):
-    return np.zeros(3)
+def Christoffel(state):
+    return 
 
-def eucDistance(pos1, pos2):
-    return np.sqrt(np.dot(np.subtract(pos1.copy(),pos2.copy()),np.subtract(pos1.copy(),pos2.copy())))
+def Distance(pos1, pos2):
+    return 
 
 
-eucSpace = Geometry(
-    eucMetricTensor,
-    eucChristoffel,
-    eucDistance
+space = Geometry(
+    MetricTensor,
+    Christoffel,
+    Distance
     )
 
 # // -------------------------------------------------------------
@@ -37,12 +37,12 @@ eucSpace = Geometry(
 # // -------------------------------------------------------------
 
 def identityR3(coords):
-    return coords
+    return 
 
 def unitScaling(pos):
-    return 1.
+    return 
 
-eucModel = Model(identityR3,unitScaling)
+model = Model(identityR3,unitScaling)
 
 # // -------------------------------------------------------------
 # // Obstacle/Bounding Ball Information
@@ -54,30 +54,13 @@ eucModel = Model(identityR3,unitScaling)
 R = 6.
 
 def distToSphere(pos):
-    return R-np.sqrt(pos[0]**2. + pos[1]**2. + pos[2]**2.)
+    return 
 
 sphereObstacle = Obstacle(
     distToSphere,
     R
 )
 
-# // Cube Bounding Box
-
-# Default bounding box size (cube side length)
-boxSize = 6.
-
-def distToBox(pos):
-    xWall = boxSize - abs(pos.x)
-    yWall = boxSize - abs(pos.y)
-    zWall = boxSize - abs(pos.z)
-
-    return min(xWall,min(yWall,zWall))
-
-boxObstacle = Obstacle(
-    distToBox,
-    boxSize
-)
-
 # //package stuff up for export
-euclidean = AmbientSpace( eucSpace, eucModel, sphereObstacle)
+templateSpace = AmbientSpace( space, model, sphereObstacle)
 

@@ -11,6 +11,29 @@ from src.Computation.dState import dState
 # //implementing the Rk4 Scheme for arbitrary classes that have clone add and multiplyScalar
 # //will use this possibly on individual states, or on entire DataLists!
 class RungeKutta:
+    """
+    A class used to perform numerical integration via Explicit 4-stage Runge-Kutta method (RK4)
+
+    ...
+
+    Attributes
+    ----------
+    ambientSpace : object
+        AmbientSpace object characterizing ambient space
+
+    stepSize : float
+        Integration step size
+
+    Methods
+    -------
+    deriveFunc(dataList)
+        Generates DataList consisting of dState characterizing dynamics acting on system (i.e. covariant acceleration (Christoffel symbol terms), external/internal potentials, etc.)
+        Returns DataList of dStates
+
+    step(dataList)
+        Perform one integration step via the RK4 algorithm on system described by dataList
+        Returns updated clone of dataList
+    """
 
     def __init__(self, ambientSpace, stepSize):
         # self.derive=derive

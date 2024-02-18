@@ -14,6 +14,38 @@ import numpy as np
 
 
 class dState:
+    """
+    A class used to store information about dstate
+    Describes vector
+
+    ...
+
+    Attributes
+    ----------
+    vel : array
+        array of velocity data
+
+    acc : array
+        array of acceleration data
+
+    Methods
+    -------
+    clone()
+        Generate copy of self
+        Returns dState clone
+
+    add(dstate)
+        Add velocity and acceleration of dstate to self.vel and self.acc, respectively
+        Returns self
+
+    sub(dstate)
+        Subtract velocity and acceleration of dstate from self.vel and self.acc, respectively
+        Returns self
+
+    multiplyScalar(k)
+        Scale self.vel and self.acc by scalar value k
+        Returns self
+    """
 
     # //build a dState from the input of an object storing velocity data
     # //and an object storing acceleration data

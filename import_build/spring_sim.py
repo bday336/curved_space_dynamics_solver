@@ -13,7 +13,7 @@ from matplotlib import gridspec
 from matplotlib import animation, rc
 
 # Import Packages
-from src.function_bank import boostxh3, rotxh3, rotzh3, hyp2poin3d, rot2hyp
+from src.utils.function_bank import boostxh3, rotxh3, rotzh3, hyp2poin3d, rot2hyp
 
 from src.Computation.DataList import DataList
 
@@ -102,7 +102,7 @@ dt = 0.001
 tmaxNum = 100000
 
 # //make the simulation
-sim = Simulation( ambientSpace, configurationSpace, dataList, dt )
+sim = Simulation( ambientSpace, dataList, configurationSpace, dt )
 
 for c in range(tmaxNum):
     sim.step()

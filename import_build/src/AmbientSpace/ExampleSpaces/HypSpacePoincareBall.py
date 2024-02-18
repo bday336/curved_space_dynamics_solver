@@ -1,25 +1,3 @@
-# import {
-#     Matrix3,
-#     SphereBufferGeometry,
-#     BoxBufferGeometry,
-#     Vector3,
-#     Vector4
-# } from "../../../3party/three/build/three.module.js";
-
-# import {
-#     randomVec3Ball,
-#     randomVec3Sphere
-# } from "../../utils/random.js";
-
-# import {State} from "../../Computation/State.js";
-
-# import { Geometry } from "../Components/Geometry.js";
-# import {Model} from "../Components/Model.js";
-# import {Obstacle} from "../Components/Obstacle.js";
-
-# import {AmbientSpace} from "../AmbientSpace.js";
-
-
 import numpy as np
 
 from src.AmbientSpace.Components.Geometry import Geometry
@@ -30,15 +8,20 @@ from src.AmbientSpace.AmbientSpace import AmbientSpace
 
 from src.Computation.State import State
 
+# // -------------------------------------------------------------
+# // 3-Dimensional Hyperbolic Space Information (Poincare Ball Model)
+# // -------------------------------------------------------------
+
+# // -------------------------------------------------------------
+# // Helper Functions
+# // -------------------------------------------------------------
 
 def minkowskiDot(u,v):
     return u[3]*v[3] - ( u[0]*v[0] + u[1]*v[1] + u[2]*v[2] )
 
-
 # //distance on hyperboloid:
 def hyperboloidDistance(u,v):
     return np.arccosh(abs(minkowskiDot(u,v)))
-
 
 # //map from poincare ball to the hyperboloid:
 def toHyperboloid(pos):
@@ -49,11 +32,8 @@ def toHyperboloid(pos):
 
     return p
 
-
-
-
 # // -------------------------------------------------------------
-# //some geometry stuff:
+# // Geometry Information
 # // -------------------------------------------------------------
 
 
@@ -114,11 +94,8 @@ hypSpace = Geometry(
     )
 
 
-
-
-
 # // -------------------------------------------------------------
-# //model of Euclidean space : do nothing
+# // Model Information
 # // -------------------------------------------------------------
 
 # //there is no model for this space: its a metric directly on R3!
@@ -147,7 +124,7 @@ hypModel = Model(hypCoordsToModel, hypModelScaling)
 
 
 # // -------------------------------------------------------------
-# //obstacles to contain balls in Euclidean Space
+# // Obstacle/Bounding Ball Information
 # // -------------------------------------------------------------
 
 # //a sphere of radius R
@@ -160,25 +137,10 @@ def distToSphere(pos):
     dist =  hypDistance(pos,center)
     return sphereSize - dist
 
-sphereGeom = None #new SphereBufferGeometry(zoom * coordSize, 64,32);
-
-generateState = None #function(){
-
-#     let pos = randomVec3Sphere(0.5*coordSize);
-#     let vel = randomVec3Ball(3).divideScalar(conformalFactor(pos));
-#     return new State(pos,vel);
-# }
-
 sphereObstacle = Obstacle(
     distToSphere,
-    sphereGeom,
-    sphereSize,
-    generateState
+    sphereSize
 )
-
-
-
-
 
 # //package stuff up for export
 hyperbolic = AmbientSpace( hypSpace, hypModel, sphereObstacle)

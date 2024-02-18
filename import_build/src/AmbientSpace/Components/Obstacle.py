@@ -2,25 +2,24 @@ import numpy as np
 
 import src.Computation.State as State
 
-
-
+# A class used to store information about obstacle in space (e.i. bounding box)
 class Obstacle:
-    def __init__(self, distance, geometry, size=None, generateState=None):
-        self.distance=distance;
-        self.geometry=geometry;
+    """
+    A class used to store information about obstacle in space (e.i. bounding box)
 
+    ...
 
-        # //size gives the rough size of the bounding box IN GEOMETRIC UNITS: useful for setting initial conditions
-        # //(ie choosing radii)
-        if(size!=None):
-            self.size=size
-        else:
-            self.size = 1.
+    Attributes
+    ----------
+    distance : function
+        function to calculate the distance between two points in the ambient space
 
+    size : float
+        Rough size of the bouding box of obstacle in geometric units
 
-        # //generateState makes a random state IN COORDINATES that is not hitting the obstacle
-        # if(generateState != None):
-        #     self.generateState = generateState
-        # else:
-        #     self.generateState =  State(randomVec3Ball(1),randomVec3Ball(1))
+    """
+
+    def __init__(self, distance, size):
+        self.distance=distance
+        self.size=size
 

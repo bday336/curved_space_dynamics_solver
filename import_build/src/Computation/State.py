@@ -13,6 +13,50 @@
 import numpy as np
 
 class State:
+    """
+    A class used to store information about state (vertices of system)
+    Describes tangent vector at vertex (velocity of vertex)
+
+    ...
+
+    Attributes
+    ----------
+    pos : array
+        array of position of state in the ambient space
+
+    vel : array
+        array of velocity of state in the ambient space
+
+    Methods
+    -------
+    clone()
+        Generate copy of self
+        Returns State clone
+
+    add(state)
+        Add velocity of state to self.vel
+        Returns self
+
+    sub(state)
+        Subtract velocity of state from self.vel
+        Returns self
+
+    multiplyScalar(k)
+        Scale self.vel by scalar value k
+        Returns self
+
+    differentiate(fn)
+        Calculate directional derivative of function fn at position self.pos in direction self.vel
+        Returns scaled output of fn
+
+    flow(eps)
+        Move state infinitesimally (i.e. by eps) along its tangent vector
+        Returns self
+
+    updateBy(dState)
+        Update state by infinitesimally flowing along a differential to the state (dState)
+        Returns self
+    """
 
     # //build a state from the input of an object storing position data
     # //and an object storing velocity data
@@ -52,8 +96,6 @@ class State:
 
         dval = fn(pos2)-fn(pos1)
         return  dval/eps
-
-
 
     # //move a state infintesimally along its tangent direction
     def flow(self, eps):

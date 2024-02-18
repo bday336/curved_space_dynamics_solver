@@ -4,10 +4,10 @@ from src.Computation.State import State
 from src.Computation.dState import dState
 
 
-# Class for storing ambient space geometry
+# A class used to store information about geometry of space
 class Geometry:
     """
-    A class used to information about ambient space geometry
+    A class used to store information about geometry of space
 
     ...
 
