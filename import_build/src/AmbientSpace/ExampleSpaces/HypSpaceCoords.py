@@ -110,11 +110,45 @@ def hypDistance(pos1, pos2):
 
     return hyperboloidDistance(u,v)
 
+##### Distance Functions for coupling potentials and length constraints
+def D12(state1, state2):
+    a1,b1,g1 = state1.pos.copy()
+    a2,b2,g2 = state2.pos.copy()
+    return np.cosh(a1)*np.cosh(a2) - np.sinh(a1)*np.cos(b1)*np.sinh(a2)*np.cos(b2) - np.sinh(a1)*np.sin(b1)*np.sinh(a2)*np.sin(b2)*np.cos(g1 - g2)
+
+# First Derivatives of distance function
+def da1D12(state1, state2):
+    a1,b1,g1 = state1.pos.copy()
+    a2,b2,g2 = state2.pos.copy()
+    return np.sinh(a1)*np.cosh(a2) - np.cosh(a1)*np.cos(b1)*np.sinh(a2)*np.cos(b2) - np.cosh(a1)*np.sin(b1)*np.sinh(a2)*np.sin(b2)*np.cos(g1 - g2)
+
+def db1D12(state1, state2):
+    a1,b1,g1 = state1.pos.copy()
+    a2,b2,g2 = state2.pos.copy()
+    return np.sinh(a1)*np.sin(b1)*np.sinh(a2)*np.cos(b2) - np.sinh(a1)*np.cos(b1)*np.sinh(a2)*np.sin(b2)*np.cos(g1 - g2) 
+
+def dg1D12(state1, state2):
+    a1,b1,g1 = state1.pos.copy()
+    a2,b2,g2 = state2.pos.copy()
+    return np.sinh(a1)*np.sin(b1)*np.sinh(a2)*np.sin(b2)*np.sin(g1 - g2)
+# For the remaining three functions use:
+# da2D12 = da1D12(state2, state1)
+# db2D12 = db1D12(state2, state1)
+# dg2D12 = dg1D12(state2, state1)
+
+hypFuncDict = {
+    "d12"    : D12,
+    "da1d12" : da1D12,
+    "db1d12" : db1D12,
+    "dg1d12" : dg1D12
+    }
+
 
 hypSpace = Geometry(
     hypMetricTensor,
     hypChristoffel,
-    hypDistance
+    hypDistance,
+    hypFuncDict
     )
 
 # // -------------------------------------------------------------

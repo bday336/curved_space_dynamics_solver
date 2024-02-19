@@ -42,61 +42,60 @@ class RungeKutta:
 
     def deriveFunc(self, dataList):
         temparr = []
-        # Incorporate spring data
-        def D12(state1, state2):
-            a1,b1,g1 = state1.pos.copy()
-            a2,b2,g2 = state2.pos.copy()
-            return cosh(a1)*cosh(a2) - sinh(a1)*cos(b1)*sinh(a2)*cos(b2) - sinh(a1)*sin(b1)*sinh(a2)*sin(b2)*cos(g1 - g2)
-        
-        # First Derivatives
-        def da1D12(state1, state2):
-            a1,b1,g1 = state1.pos.copy()
-            a2,b2,g2 = state2.pos.copy()
-            return sinh(a1)*cosh(a2) - cosh(a1)*cos(b1)*sinh(a2)*cos(b2) - cosh(a1)*sin(b1)*sinh(a2)*sin(b2)*cos(g1 - g2)
 
-        def db1D12(state1, state2):
-            a1,b1,g1 = state1.pos.copy()
-            a2,b2,g2 = state2.pos.copy()
-            return sinh(a1)*sin(b1)*sinh(a2)*cos(b2) - sinh(a1)*cos(b1)*sinh(a2)*sin(b2)*cos(g1 - g2) 
+        # Contributions from ambient space geometry
+        for a in range(len(dataList.data)):
+            # print(a)
+            temparr.append(self.ambientSpace.acceleration(dataList.data[a].clone()))
 
-        def dg1D12(state1, state2):
-            a1,b1,g1 = state1.pos.copy()
-            a2,b2,g2 = state2.pos.copy()
-            return sinh(a1)*sin(b1)*sinh(a2)*sin(b2)*sin(g1 - g2)
-        # For the remaining three functions use:
-        # da2D12 = da1D12(state2, state1)
-        # db2D12 = db1D12(state2, state1)
-        # dg2D12 = dg1D12(state2, state1)
-        
-        ks,x = [1,1]
+        ks,x = [100,1]
         m = 1.
 
-        # Distance Function
-        d12 = D12(dataList.data[0],dataList.data[1])
-        # First derivatives of distance function
-        da1d12 = da1D12(dataList.data[0],dataList.data[1])
-        db1d12 = db1D12(dataList.data[0],dataList.data[1])
-        dg1d12 = dg1D12(dataList.data[0],dataList.data[1])
-        da2d12 = da1D12(dataList.data[1],dataList.data[0])
-        db2d12 = db1D12(dataList.data[1],dataList.data[0])
-        dg2d12 = dg1D12(dataList.data[1],dataList.data[0])
+        # Contributions from coupling potential
+        if len(dataList.connectivity) != 0:
+            for b in dataList.connectivity:
+                # print(b)
+                b.sort()
+                # print(b)
+                # Distance Function
+                d12 = self.ambientSpace.geometry.funcDict["d12"](dataList.data[b[0]],dataList.data[b[1]])
+                # First derivatives of distance function
+                da1d12 = self.ambientSpace.geometry.funcDict["da1d12"](dataList.data[b[0]],dataList.data[b[1]])
+                db1d12 = self.ambientSpace.geometry.funcDict["db1d12"](dataList.data[b[0]],dataList.data[b[1]])
+                dg1d12 = self.ambientSpace.geometry.funcDict["dg1d12"](dataList.data[b[0]],dataList.data[b[1]])
+                da2d12 = self.ambientSpace.geometry.funcDict["da1d12"](dataList.data[b[1]],dataList.data[b[0]])
+                db2d12 = self.ambientSpace.geometry.funcDict["db1d12"](dataList.data[b[1]],dataList.data[b[0]])
+                dg2d12 = self.ambientSpace.geometry.funcDict["dg1d12"](dataList.data[b[1]],dataList.data[b[0]])
 
-        a1,b1,g1 = dataList.data[0].pos.copy()
-        a2,b2,g2 = dataList.data[1].pos.copy()
+                a1,b1,g1 = dataList.data[b[0]].pos.copy()
+                a2,b2,g2 = dataList.data[b[1]].pos.copy()
 
-        spa1 = (ks*(arccosh(d12) - x)*da1d12)/(m*sqrt(d12**2. - 1.))
-        spb1 = (ks*(arccosh(d12) - x)*db1d12)/(m*sinh(a1)**2. * sqrt(d12**2. - 1.))
-        spg1 = (ks*(arccosh(d12) - x)*dg1d12)/(m*sinh(a1)**2. * sin(b1)**2. * sqrt(d12**2. - 1.))
-        spa2 = (ks*(arccosh(d12) - x)*da2d12)/(m*sqrt(d12**2. - 1.))
-        spb2 = (ks*(arccosh(d12) - x)*db2d12)/(m*sinh(a2)**2. * sqrt(d12**2. - 1.))
-        spg2 = (ks*(arccosh(d12) - x)*dg2d12)/(m*sinh(a2)**2. * sin(b2)**2. * sqrt(d12**2. - 1.))
+                spa1 = (ks*(arccosh(d12) - x)*da1d12)/(m*sqrt(d12**2. - 1.))
+                spb1 = (ks*(arccosh(d12) - x)*db1d12)/(m*sinh(a1)**2. * sqrt(d12**2. - 1.))
+                spg1 = (ks*(arccosh(d12) - x)*dg1d12)/(m*sinh(a1)**2. * sin(b1)**2. * sqrt(d12**2. - 1.))
+                spa2 = (ks*(arccosh(d12) - x)*da2d12)/(m*sqrt(d12**2. - 1.))
+                spb2 = (ks*(arccosh(d12) - x)*db2d12)/(m*sinh(a2)**2. * sqrt(d12**2. - 1.))
+                spg2 = (ks*(arccosh(d12) - x)*dg2d12)/(m*sinh(a2)**2. * sin(b2)**2. * sqrt(d12**2. - 1.))
 
-        spdStates = [dState(zeros(3),array([spa1,spb1,spg1])), dState(zeros(3),array([spa2,spb2,spg2]))]
+                spdStates = [dState(zeros(3),array([spa1,spb1,spg1])), dState(zeros(3),array([spa2,spb2,spg2]))]
 
-        for a in range(len(dataList.data)):
+                # # sp1
+                # print(spdStates[0].acc)
+                # # sp2
+                # print(spdStates[1].acc)
+                temparr[b[0]] = temparr[b[0]].sub(spdStates[0])
+                temparr[b[1]] = temparr[b[1]].sub(spdStates[1])
+                # # sp1
+                # print(temparr[b[0]].vel)
+                # # sp2
+                # print(temparr[b[1]].vel)
 
-            temparr.append(self.ambientSpace.acceleration(dataList.data[a].clone()).sub(spdStates[a]))
-        return DataList(temparr)
+        # print(dataList.connectivity)
+
+        # for a in range(len(dataList.data)):
+        #     print(a)
+        #     temparr.append(self.ambientSpace.acceleration(dataList.data[a].clone()).sub(spdStates[a]))
+        return DataList(temparr, connectivity=dataList.connectivity)
 
     # //step forwards one timestep
     def step(self, dataList):

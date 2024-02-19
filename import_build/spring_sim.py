@@ -13,7 +13,9 @@ from matplotlib import gridspec
 from matplotlib import animation, rc
 
 # Import Packages
-from src.utils.function_bank import boostxh3, rotxh3, rotzh3, hyp2poin3d, rot2hyp
+from src.utils.mesh_bank import particle_mesh, dumbbell_mesh
+
+from src.utils.function_bank import boostxh3, rotxh3, rotzh3, hyp2poin3d, rot2hyp, genballe3, genballh3
 
 from src.Computation.DataList import DataList
 
@@ -30,37 +32,85 @@ from src.AmbientSpace.ExampleSpaces.HypSpaceCoords import hyperbolic
 # from src.AmbientSpace.ExampleSpaces.H2xE import h2xe
 # from src.AmbientSpace.ExampleSpaces.S2xE import s2xe
 
-def genballe3(center,rad):
-    u, v = np.mgrid[0:np.pi+(np.pi)/15.:(np.pi)/15., 0:2.*np.pi+(2.*np.pi)/15.:(2.*np.pi)/15.]
-    x = rad*np.sin(u)*np.cos(v)
-    y = rad*np.sin(u)*np.sin(v)
-    z = rad*np.cos(u)
-
-    for b in range(u.shape[1]):
-        for a in range(u.shape[0]):
-            # This method currently does not preserve the orientation of the sphere (need to update if we wanted to have some applied texture)
-            testarr=np.array([x[b,a],y[b,a],z[b,a]]) + center
-            x[b,a],y[b,a],z[b,a]=testarr[0],testarr[1],testarr[2]
-
-    return x,y,z
-
-def genballh3(center,rad):
-    u, v = np.mgrid[0:np.pi+(np.pi)/15.:(np.pi)/15., 0:2.*np.pi+(2.*np.pi)/15.:(2.*np.pi)/15.]
-    x = np.sinh(rad)*np.sin(u)*np.cos(v)
-    y = np.sinh(rad)*np.sin(u)*np.sin(v)
-    z = np.sinh(rad)*np.cos(u)
-    w = np.full(u.shape,np.cosh(rad))
-
-    for b in range(u.shape[1]):
-        for a in range(u.shape[0]):
-            # This method currently does not preserve the orientation of the sphere (need to update if we wanted to have some applied texture)
-            testarr=rotxh3(np.arctan2(center[2],center[1])) @ rotzh3(np.arctan2((rotxh3(-np.arctan2(center[2],center[1])) @ center)[1],(rotxh3(-np.arctan2(center[2],center[1])) @ center)[0])) @ boostxh3(np.arccosh(center[3])) @ np.array([x[b,a],y[b,a],z[b,a],w[b,a]])
-            x[b,a],y[b,a],z[b,a],w[b,a]=testarr[0],testarr[1],testarr[2],testarr[3]
-
-    return x/(w+1.),y/(w+1.),z/(w+1.)
-
 # Set the ambient space for the simulation environment
 ambientSpace = hyperbolic
+
+# # Here we take a mesh data structure as an initial condition for the positions
+# # and connections acting as the springs for the edges. The generic structure is
+# # given to be taken in the form of
+# # [ 
+# #   array of vertex position (x,y,z) , 
+# #   array of tuples of vertex indices forming egdes (1,2) ,
+# #   array of 3-tuple of vertex indices forming facets (1,2,3)
+# #  ]
+# # Preset meshes can be loaded in from the mesh_bank file.
+
+# # The initial velocities of the vertices will be given through the killing field 
+# # initializer which describes a general loxodromic killing field along the x-axis.
+# # This will form the second array needed to initialize the problem. With the third 
+# # array containing the data concerning the mass of each vertex, and values for stiffness
+# # and rest length of the spring/edges between each vertex.
+
+# # Parameters for convienence (if uniform throughout mesh)
+# killing_vel, killing_angvel, stiffness, eq_len = 1., 0., 10., 10.
+
+# # Manually generate mesh data
+# mesh = []
+# mesh=dumbbell_mesh(x)
+
+# # Format mesh for use in the solver. Mainly about ordering the edge connection
+# # array to make it easier to calculate the jacobian in solver. Have the lower
+# # value vertex index on the left of the tuple.
+# for a in mesh[1]:
+#     a.sort()
+# mesh[1].sort()
+
+# # Extract mesh information for indexing moving forward
+# vert_num=len(mesh[0])
+# sp_num=len(mesh[1])
+
+# # List of connecting vertices for each vertex. This is used in the velocity
+# # update constraints in the solver.
+# # (index of stoke vertex in mesh[0], index of spring for stoke in sparr)
+# conn_list=[]
+# for b in range(vert_num):
+#     conn_list.append([])
+# for c in range(vert_num):
+#     for d in mesh[1]:
+#         if c in d:
+#             if d.index(c)==0:
+#                 conn_list[c].append([d[1],mesh[1].index(d)])
+#             else:
+#                 conn_list[c].append([d[0],mesh[1].index(d)])
+
+# # Generate velocity and mass array
+# velocities=[]
+# masses=[]
+# for e in mesh[0]:
+#     velocities.append(initial_con(e,v,w).tolist())
+#     masses.append(1.)
+
+# # Generate parameter array (we will implicitly take all the vertices to have
+# # mass of 1 so not included in this array. Can add later if needed). The rest
+# # length of the springs for the edges are calculated from the mesh vertices
+# # separation values.
+# # (spring constant k (all set to 1 here), rest length l_eq)
+# sparr=[]
+# for f in mesh[1]:
+#     sparr.append([
+#         k,
+#         h3dist(convertpos_rot2hyph3(mesh[0][f[0]]),convertpos_rot2hyph3(mesh[0][f[1]]))
+#         ])
+
+# # Intialize the time stepping for the integrator.
+# delT=.01
+# maxT=10+delT
+# nump=maxT/delT
+# timearr=np.arange(0,maxT,delT)
+
+# Generate System
+
+
 
 # Build a configuration space
 NumBalls = 2
@@ -74,6 +124,7 @@ for a in range(NumBalls):
     radii.append(r)
     masses.append(m)
 
+# Build connectivity array
 stiffness = 1.
 eq_len = 1.
 
@@ -99,7 +150,7 @@ iniCond = [
 dataList = DataList(iniCond)
 
 dt = 0.001
-tmaxNum = 100000
+tmaxNum = 1000
 
 # //make the simulation
 sim = Simulation( ambientSpace, dataList, configurationSpace, dt )
@@ -220,107 +271,107 @@ fig.tight_layout()
 
 plt.show()
 
-# ------------------------------------------------------------------
-### Uncomment to just generate gif of trajectory of the particle ###
-# ------------------------------------------------------------------
+# # ------------------------------------------------------------------
+# ### Uncomment to just generate gif of trajectory of the particle ###
+# # ------------------------------------------------------------------
 
-# # Generate gif
-# # create empty lists for the x and y data
-# x1 = []
-# y1 = []
-# z1 = []
-# x2 = []
-# y2 = []
-# z2 = []
-# x3 = []
-# y3 = []
-# z3 = []
+# # # Generate gif
+# # # create empty lists for the x and y data
+# # x1 = []
+# # y1 = []
+# # z1 = []
+# # x2 = []
+# # y2 = []
+# # z2 = []
+# # x3 = []
+# # y3 = []
+# # z3 = []
 
-# First set up the figure, the axis, and the plot element we want to animate
-fig = plt.figure(figsize=(8,8))
-ax1 = fig.add_subplot(111, projection='3d')
-# ax1.set_aspect("equal")
+# # First set up the figure, the axis, and the plot element we want to animate
+# fig = plt.figure(figsize=(8,8))
+# ax1 = fig.add_subplot(111, projection='3d')
+# # ax1.set_aspect("equal")
 
-# #draw sphere
-# Draw Unit Sphere Horizon in Embedding Space (using Poincare Disk Model of Hyperbolic Space)
-u, v = np.mgrid[0:np.pi+(np.pi)/15.:(np.pi)/15., 0:2.*np.pi+(2.*np.pi)/15.:(2.*np.pi)/15.]
-x = 1.*np.sin(u)*np.cos(v)
-y = 1.*np.sin(u)*np.sin(v)
-z = 1.*np.cos(u)
-ax1.plot_wireframe(x, y, z, color="b", alpha=.1)
-ax1.set_xlim3d(-1,1)
-ax1.set_xlabel('X')
-ax1.set_ylim3d(-1,1)
-ax1.set_ylabel('Y')
-ax1.set_zlim3d(-1,1)
-ax1.set_zlabel('Z')
+# # #draw sphere
+# # Draw Unit Sphere Horizon in Embedding Space (using Poincare Disk Model of Hyperbolic Space)
+# u, v = np.mgrid[0:np.pi+(np.pi)/15.:(np.pi)/15., 0:2.*np.pi+(2.*np.pi)/15.:(2.*np.pi)/15.]
+# x = 1.*np.sin(u)*np.cos(v)
+# y = 1.*np.sin(u)*np.sin(v)
+# z = 1.*np.cos(u)
+# ax1.plot_wireframe(x, y, z, color="b", alpha=.1)
+# ax1.set_xlim3d(-1,1)
+# ax1.set_xlabel('X')
+# ax1.set_ylim3d(-1,1)
+# ax1.set_ylabel('Y')
+# ax1.set_zlim3d(-1,1)
+# ax1.set_zlabel('Z')
 
-ub, vb = np.mgrid[0:np.pi+(np.pi)/15.:(np.pi)/15., 0:2.*np.pi+(2.*np.pi)/15.:(2.*np.pi)/15.]
-xb = np.sinh(2)/(np.cosh(2)+1) * np.sin(ub)*np.cos(vb)
-yb = np.sinh(2)/(np.cosh(2)+1) * np.sin(ub)*np.sin(vb)
-zb = np.sinh(2)/(np.cosh(2)+1) * np.cos(ub)
-ax1.plot_wireframe(xb, yb, zb, color="k", alpha=.1)
+# ub, vb = np.mgrid[0:np.pi+(np.pi)/15.:(np.pi)/15., 0:2.*np.pi+(2.*np.pi)/15.:(2.*np.pi)/15.]
+# xb = np.sinh(2)/(np.cosh(2)+1) * np.sin(ub)*np.cos(vb)
+# yb = np.sinh(2)/(np.cosh(2)+1) * np.sin(ub)*np.sin(vb)
+# zb = np.sinh(2)/(np.cosh(2)+1) * np.cos(ub)
+# ax1.plot_wireframe(xb, yb, zb, color="k", alpha=.1)
 
-# Particle Plot data
-ball_box=[]
-viz_balls=[]
+# # Particle Plot data
+# ball_box=[]
+# viz_balls=[]
 
-ball_box.append(genballh3(hyppart1plot[0],radii[0])) #hypercirch3(array([sinh(gat[a])*sin(gbt[a])*cos(ggt[a]),sinh(gat[a])*sin(gbt[a])*sin(ggt[a]),sinh(gat[a])*cos(gbt[a]),cosh(gat[a])]),.1))
-viz_balls.append([ax1.plot_surface(ball_box[-1][0], ball_box[-1][1], ball_box[-1][2], color="b")])
+# ball_box.append(genballh3(hyppart1plot[0],radii[0])) #hypercirch3(array([sinh(gat[a])*sin(gbt[a])*cos(ggt[a]),sinh(gat[a])*sin(gbt[a])*sin(ggt[a]),sinh(gat[a])*cos(gbt[a]),cosh(gat[a])]),.1))
+# viz_balls.append([ax1.plot_surface(ball_box[-1][0], ball_box[-1][1], ball_box[-1][2], color="b")])
 
-ball_box.append(genballh3(hyppart2plot[0],radii[0])) #hypercirch3(array([sinh(gat[a])*sin(gbt[a])*cos(ggt[a]),sinh(gat[a])*sin(gbt[a])*sin(ggt[a]),sinh(gat[a])*cos(gbt[a]),cosh(gat[a])]),.1))
-viz_balls.append([ax1.plot_surface(ball_box[-1][0], ball_box[-1][1], ball_box[-1][2], color="b")])
+# ball_box.append(genballh3(hyppart2plot[0],radii[0])) #hypercirch3(array([sinh(gat[a])*sin(gbt[a])*cos(ggt[a]),sinh(gat[a])*sin(gbt[a])*sin(ggt[a]),sinh(gat[a])*cos(gbt[a]),cosh(gat[a])]),.1))
+# viz_balls.append([ax1.plot_surface(ball_box[-1][0], ball_box[-1][1], ball_box[-1][2], color="b")])
 
-# #draw trajectory
-# for b in range(vert_num):
-#     ax1.plot3D(gut[b::vert_num],gvt[b::vert_num],grt[b::vert_num], label="particle []".format(b))
-# ax1.legend(loc= 'lower left')
+# # #draw trajectory
+# # for b in range(vert_num):
+# #     ax1.plot3D(gut[b::vert_num],gvt[b::vert_num],grt[b::vert_num], label="particle []".format(b))
+# # ax1.legend(loc= 'lower left')
 
-# part1x,part1y,part1z=hypercirch3(array([sinh(gat[0::3][0])*sin(gbt[0::3][0])*cos(ggt[0::3][0]),sinh(gat[0::3][0])*sin(gbt[0::3][0])*sin(ggt[0::3][0]),sinh(gat[0::3][0])*cos(gbt[0::3][0]),cosh(gat[0::3][0])]),particles[0][7])
-# part2x,part2y,part2z=hypercirch3(array([sinh(gat[1::3][1])*sin(gbt[1::3][1])*cos(ggt[1::3][1]),sinh(gat[1::3][1])*sin(gbt[1::3][1])*sin(ggt[1::3][1]),sinh(gat[1::3][1])*cos(gbt[1::3][1]),cosh(gat[1::3][1])]),particles[1][7])
-# part3x,part3y,part3z=hypercirch3(array([sinh(gat[2::3][2])*sin(gbt[2::3][2])*cos(ggt[2::3][2]),sinh(gat[2::3][2])*sin(gbt[2::3][2])*sin(ggt[2::3][2]),sinh(gat[2::3][2])*cos(gbt[2::3][2]),cosh(gat[2::3][2])]),particles[2][7])
-# ball1=[ax1.plot_surface(part1x,part1y,part1z, color="b")]
-# ball2=[ax1.plot_surface(part2x,part2y,part2z, color="r")]
-# ball3=[ax1.plot_surface(part3x,part3y,part3z, color="k")]
+# # part1x,part1y,part1z=hypercirch3(array([sinh(gat[0::3][0])*sin(gbt[0::3][0])*cos(ggt[0::3][0]),sinh(gat[0::3][0])*sin(gbt[0::3][0])*sin(ggt[0::3][0]),sinh(gat[0::3][0])*cos(gbt[0::3][0]),cosh(gat[0::3][0])]),particles[0][7])
+# # part2x,part2y,part2z=hypercirch3(array([sinh(gat[1::3][1])*sin(gbt[1::3][1])*cos(ggt[1::3][1]),sinh(gat[1::3][1])*sin(gbt[1::3][1])*sin(ggt[1::3][1]),sinh(gat[1::3][1])*cos(gbt[1::3][1]),cosh(gat[1::3][1])]),particles[1][7])
+# # part3x,part3y,part3z=hypercirch3(array([sinh(gat[2::3][2])*sin(gbt[2::3][2])*cos(ggt[2::3][2]),sinh(gat[2::3][2])*sin(gbt[2::3][2])*sin(ggt[2::3][2]),sinh(gat[2::3][2])*cos(gbt[2::3][2]),cosh(gat[2::3][2])]),particles[2][7])
+# # ball1=[ax1.plot_surface(part1x,part1y,part1z, color="b")]
+# # ball2=[ax1.plot_surface(part2x,part2y,part2z, color="r")]
+# # ball3=[ax1.plot_surface(part3x,part3y,part3z, color="k")]
 
-# animation function. This is called sequentially
-frames=100
-def animate(i):
-    ax1.plot3D(part1plot[:int(tmaxNum*i/frames),0],part1plot[:int(tmaxNum*i/frames),1],part1plot[:int(tmaxNum*i/frames),2],)
-    ax1.plot3D(part2plot[:int(tmaxNum*i/frames),0],part2plot[:int(tmaxNum*i/frames),1],part2plot[:int(tmaxNum*i/frames),2],)
-    # ax1.legend(loc= 'lower left')
+# # animation function. This is called sequentially
+# frames=100
+# def animate(i):
+#     ax1.plot3D(part1plot[:int(tmaxNum*i/frames),0],part1plot[:int(tmaxNum*i/frames),1],part1plot[:int(tmaxNum*i/frames),2],)
+#     ax1.plot3D(part2plot[:int(tmaxNum*i/frames),0],part2plot[:int(tmaxNum*i/frames),1],part2plot[:int(tmaxNum*i/frames),2],)
+#     # ax1.legend(loc= 'lower left')
 
-    ball_box.append(genballh3(hyppart1plot[int(tmaxNum*i/frames)],radii[0])) #array([sinh(gat[b::vert_num][int(len(timearr)*i/frames)])*sin(gbt[b::vert_num][int(len(timearr)*i/frames)])*cos(ggt[b::vert_num][int(len(timearr)*i/frames)]),sinh(gat[b::vert_num][int(len(timearr)*i/frames)])*sin(gbt[b::vert_num][int(len(timearr)*i/frames)])*sin(ggt[b::vert_num][int(len(timearr)*i/frames)]),sinh(gat[b::vert_num][int(len(timearr)*i/frames)])*cos(gbt[b::vert_num][int(len(timearr)*i/frames)]),cosh(gat[b::vert_num][int(len(timearr)*i/frames)])]),.1))
-    viz_balls[0][0].remove()
-    viz_balls[0][0]=ax1.plot_surface(ball_box[-1][0], ball_box[-1][1], ball_box[-1][2], color="b")
-    ball_box.append(genballh3(hyppart2plot[int(tmaxNum*i/frames)],radii[1])) #array([sinh(gat[b::vert_num][int(len(timearr)*i/frames)])*sin(gbt[b::vert_num][int(len(timearr)*i/frames)])*cos(ggt[b::vert_num][int(len(timearr)*i/frames)]),sinh(gat[b::vert_num][int(len(timearr)*i/frames)])*sin(gbt[b::vert_num][int(len(timearr)*i/frames)])*sin(ggt[b::vert_num][int(len(timearr)*i/frames)]),sinh(gat[b::vert_num][int(len(timearr)*i/frames)])*cos(gbt[b::vert_num][int(len(timearr)*i/frames)]),cosh(gat[b::vert_num][int(len(timearr)*i/frames)])]),.1))
-    viz_balls[1][0].remove()
-    viz_balls[1][0]=ax1.plot_surface(ball_box[-1][0], ball_box[-1][1], ball_box[-1][2], color="b")
+#     ball_box.append(genballh3(hyppart1plot[int(tmaxNum*i/frames)],radii[0])) #array([sinh(gat[b::vert_num][int(len(timearr)*i/frames)])*sin(gbt[b::vert_num][int(len(timearr)*i/frames)])*cos(ggt[b::vert_num][int(len(timearr)*i/frames)]),sinh(gat[b::vert_num][int(len(timearr)*i/frames)])*sin(gbt[b::vert_num][int(len(timearr)*i/frames)])*sin(ggt[b::vert_num][int(len(timearr)*i/frames)]),sinh(gat[b::vert_num][int(len(timearr)*i/frames)])*cos(gbt[b::vert_num][int(len(timearr)*i/frames)]),cosh(gat[b::vert_num][int(len(timearr)*i/frames)])]),.1))
+#     viz_balls[0][0].remove()
+#     viz_balls[0][0]=ax1.plot_surface(ball_box[-1][0], ball_box[-1][1], ball_box[-1][2], color="b")
+#     ball_box.append(genballh3(hyppart2plot[int(tmaxNum*i/frames)],radii[1])) #array([sinh(gat[b::vert_num][int(len(timearr)*i/frames)])*sin(gbt[b::vert_num][int(len(timearr)*i/frames)])*cos(ggt[b::vert_num][int(len(timearr)*i/frames)]),sinh(gat[b::vert_num][int(len(timearr)*i/frames)])*sin(gbt[b::vert_num][int(len(timearr)*i/frames)])*sin(ggt[b::vert_num][int(len(timearr)*i/frames)]),sinh(gat[b::vert_num][int(len(timearr)*i/frames)])*cos(gbt[b::vert_num][int(len(timearr)*i/frames)]),cosh(gat[b::vert_num][int(len(timearr)*i/frames)])]),.1))
+#     viz_balls[1][0].remove()
+#     viz_balls[1][0]=ax1.plot_surface(ball_box[-1][0], ball_box[-1][1], ball_box[-1][2], color="b")
     
-    # ax1.plot3D(gut[b::vert_num][:int(len(timearr)*i/frames)],gvt[b::vert_num][:int(len(timearr)*i/frames)],grt[b::vert_num][:int(len(timearr)*i/frames)], label="particle 1")
-    # for b in range(vert_num):
-    #     ax1.plot3D(gut[b::vert_num][:int(len(timearr)*i/frames)],gvt[b::vert_num][:int(len(timearr)*i/frames)],grt[b::vert_num][:int(len(timearr)*i/frames)], label="particle {}".format(b))
-    # ax1.plot3D(gut[0::3][:int(len(timearr)*i/frames)],gvt[0::3][:int(len(timearr)*i/frames)],grt[0::3][:int(len(timearr)*i/frames)])
-    # ax1.plot3D(gut[1::3][:int(len(timearr)*i/frames)],gvt[1::3][:int(len(timearr)*i/frames)],grt[1::3][:int(len(timearr)*i/frames)])
-    # ax1.plot3D(gut[2::3][:int(len(timearr)*i/frames)],gvt[2::3][:int(len(timearr)*i/frames)],grt[2::3][:int(len(timearr)*i/frames)])
-        # part_plot.append(genballh3(array([sinh(gat[b::vert_num][int(len(timearr)*i/frames)])*sin(gbt[b::vert_num][int(len(timearr)*i/frames)])*cos(ggt[b::vert_num][int(len(timearr)*i/frames)]),sinh(gat[b::vert_num][int(len(timearr)*i/frames)])*sin(gbt[b::vert_num][int(len(timearr)*i/frames)])*sin(ggt[b::vert_num][int(len(timearr)*i/frames)]),sinh(gat[b::vert_num][int(len(timearr)*i/frames)])*cos(gbt[b::vert_num][int(len(timearr)*i/frames)]),cosh(gat[b::vert_num][int(len(timearr)*i/frames)])]),.1))
-        # viz_balls[b][0].remove()
-        # viz_balls[b][0]=ax1.plot_surface(ball_box[-1][0], ball_box[-1][1], ball_box[-1][2], color="b")
-    # part1x,part1y,part1z=hypercirch3(array([sinh(gat[0::3][int(len(timearr)*i/frames)])*sin(gbt[0::3][int(len(timearr)*i/frames)])*cos(ggt[0::3][int(len(timearr)*i/frames)]),sinh(gat[0::3][int(len(timearr)*i/frames)])*sin(gbt[0::3][int(len(timearr)*i/frames)])*sin(ggt[0::3][int(len(timearr)*i/frames)]),sinh(gat[0::3][int(len(timearr)*i/frames)])*cos(gbt[0::3][int(len(timearr)*i/frames)]),cosh(gat[0::3][int(len(timearr)*i/frames)])]),particles[0][7])
-    # part2x,part2y,part2z=hypercirch3(array([sinh(gat[1::3][int(len(timearr)*i/frames)])*sin(gbt[1::3][int(len(timearr)*i/frames)])*cos(ggt[1::3][int(len(timearr)*i/frames)]),sinh(gat[1::3][int(len(timearr)*i/frames)])*sin(gbt[1::3][int(len(timearr)*i/frames)])*sin(ggt[1::3][int(len(timearr)*i/frames)]),sinh(gat[1::3][int(len(timearr)*i/frames)])*cos(gbt[1::3][int(len(timearr)*i/frames)]),cosh(gat[1::3][int(len(timearr)*i/frames)])]),particles[1][7])
-    # part3x,part3y,part3z=hypercirch3(array([sinh(gat[2::3][int(len(timearr)*i/frames)])*sin(gbt[2::3][int(len(timearr)*i/frames)])*cos(ggt[2::3][int(len(timearr)*i/frames)]),sinh(gat[2::3][int(len(timearr)*i/frames)])*sin(gbt[2::3][int(len(timearr)*i/frames)])*sin(ggt[2::3][int(len(timearr)*i/frames)]),sinh(gat[2::3][int(len(timearr)*i/frames)])*cos(gbt[2::3][int(len(timearr)*i/frames)]),cosh(gat[2::3][int(len(timearr)*i/frames)])]),particles[2][7])
-    # ball1[0].remove()
-    # ball1[0]=ax1.plot_surface(part1x,part1y,part1z, color="b")
-    # ball2[0].remove()
-    # ball2[0]=ax1.plot_surface(part2x,part2y,part2z, color="r")
-    # ball3[0].remove()
-    # ball3[0]=ax1.plot_surface(part3x,part3y,part3z, color="k")
+#     # ax1.plot3D(gut[b::vert_num][:int(len(timearr)*i/frames)],gvt[b::vert_num][:int(len(timearr)*i/frames)],grt[b::vert_num][:int(len(timearr)*i/frames)], label="particle 1")
+#     # for b in range(vert_num):
+#     #     ax1.plot3D(gut[b::vert_num][:int(len(timearr)*i/frames)],gvt[b::vert_num][:int(len(timearr)*i/frames)],grt[b::vert_num][:int(len(timearr)*i/frames)], label="particle {}".format(b))
+#     # ax1.plot3D(gut[0::3][:int(len(timearr)*i/frames)],gvt[0::3][:int(len(timearr)*i/frames)],grt[0::3][:int(len(timearr)*i/frames)])
+#     # ax1.plot3D(gut[1::3][:int(len(timearr)*i/frames)],gvt[1::3][:int(len(timearr)*i/frames)],grt[1::3][:int(len(timearr)*i/frames)])
+#     # ax1.plot3D(gut[2::3][:int(len(timearr)*i/frames)],gvt[2::3][:int(len(timearr)*i/frames)],grt[2::3][:int(len(timearr)*i/frames)])
+#         # part_plot.append(genballh3(array([sinh(gat[b::vert_num][int(len(timearr)*i/frames)])*sin(gbt[b::vert_num][int(len(timearr)*i/frames)])*cos(ggt[b::vert_num][int(len(timearr)*i/frames)]),sinh(gat[b::vert_num][int(len(timearr)*i/frames)])*sin(gbt[b::vert_num][int(len(timearr)*i/frames)])*sin(ggt[b::vert_num][int(len(timearr)*i/frames)]),sinh(gat[b::vert_num][int(len(timearr)*i/frames)])*cos(gbt[b::vert_num][int(len(timearr)*i/frames)]),cosh(gat[b::vert_num][int(len(timearr)*i/frames)])]),.1))
+#         # viz_balls[b][0].remove()
+#         # viz_balls[b][0]=ax1.plot_surface(ball_box[-1][0], ball_box[-1][1], ball_box[-1][2], color="b")
+#     # part1x,part1y,part1z=hypercirch3(array([sinh(gat[0::3][int(len(timearr)*i/frames)])*sin(gbt[0::3][int(len(timearr)*i/frames)])*cos(ggt[0::3][int(len(timearr)*i/frames)]),sinh(gat[0::3][int(len(timearr)*i/frames)])*sin(gbt[0::3][int(len(timearr)*i/frames)])*sin(ggt[0::3][int(len(timearr)*i/frames)]),sinh(gat[0::3][int(len(timearr)*i/frames)])*cos(gbt[0::3][int(len(timearr)*i/frames)]),cosh(gat[0::3][int(len(timearr)*i/frames)])]),particles[0][7])
+#     # part2x,part2y,part2z=hypercirch3(array([sinh(gat[1::3][int(len(timearr)*i/frames)])*sin(gbt[1::3][int(len(timearr)*i/frames)])*cos(ggt[1::3][int(len(timearr)*i/frames)]),sinh(gat[1::3][int(len(timearr)*i/frames)])*sin(gbt[1::3][int(len(timearr)*i/frames)])*sin(ggt[1::3][int(len(timearr)*i/frames)]),sinh(gat[1::3][int(len(timearr)*i/frames)])*cos(gbt[1::3][int(len(timearr)*i/frames)]),cosh(gat[1::3][int(len(timearr)*i/frames)])]),particles[1][7])
+#     # part3x,part3y,part3z=hypercirch3(array([sinh(gat[2::3][int(len(timearr)*i/frames)])*sin(gbt[2::3][int(len(timearr)*i/frames)])*cos(ggt[2::3][int(len(timearr)*i/frames)]),sinh(gat[2::3][int(len(timearr)*i/frames)])*sin(gbt[2::3][int(len(timearr)*i/frames)])*sin(ggt[2::3][int(len(timearr)*i/frames)]),sinh(gat[2::3][int(len(timearr)*i/frames)])*cos(gbt[2::3][int(len(timearr)*i/frames)]),cosh(gat[2::3][int(len(timearr)*i/frames)])]),particles[2][7])
+#     # ball1[0].remove()
+#     # ball1[0]=ax1.plot_surface(part1x,part1y,part1z, color="b")
+#     # ball2[0].remove()
+#     # ball2[0]=ax1.plot_surface(part2x,part2y,part2z, color="r")
+#     # ball3[0].remove()
+#     # ball3[0]=ax1.plot_surface(part3x,part3y,part3z, color="k")
 
-# equivalent to rcParams['animation.html'] = 'html5'
-rc('animation', html='html5')
+# # equivalent to rcParams['animation.html'] = 'html5'
+# rc('animation', html='html5')
 
-# call the animator. blit=True means only re-draw the parts that 
-# have changed.
-anim = animation.FuncAnimation(fig, animate,frames=frames, interval=50)
+# # call the animator. blit=True means only re-draw the parts that 
+# # have changed.
+# anim = animation.FuncAnimation(fig, animate,frames=frames, interval=50)
 
-anim.save('./h3springtest.mov', writer='imagemagick')
+# anim.save('./h3springtest.mov', writer='imagemagick')

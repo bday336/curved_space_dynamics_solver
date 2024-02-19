@@ -22,6 +22,9 @@ class Geometry:
     distance : function
         function to calculate the distance between two points in the ambient space
 
+    funcDict : dictionary
+        dictionary of axuillary functions for a given geometry (e.g. derivatives of distance function)
+
     Methods
     -------
     covariantAcceleration(state)
@@ -41,10 +44,12 @@ class Geometry:
         Returns differential (gradient) of function at given point
     """
 
-    def __init__(self, metricTensor, christoffel, distance):
+    def __init__(self, metricTensor, christoffel, distance, funcDict = None):
         self.metricTensor = metricTensor
         self.christoffel  = christoffel
         self.distance     = distance
+        if funcDict != None:
+            self.funcDict = funcDict
 
 
     def covariantAcceleration(self, state):

@@ -14,13 +14,21 @@ class DataList:
     Attributes
     ----------
     data : array
-        array of state objects
+        array of state objects (vertices)
+
+    connectivity : array
+        array of connectivity information between states in data - defaults to None i.e. data is collection of free vertices
+        (e.g. connectivity = [[1,0],[3,8]] means states 0 and 1 are connected and states 3 and 8 are connected via coupling potential or constraint)
 
     Methods
     -------
     clone()
         Generate copy of self
         Returns DataList clone
+
+    combine(dataList)
+        Generates new DataList object consisting of states from self and dataList 
+        Returns combined Datalist object
 
     add(dataList)
         Add velocity of each state in dataList to each state in self componentwise
@@ -44,16 +52,37 @@ class DataList:
     """
 
     # Populate list with states
-    def __init__(self, data):
+    def __init__(self, data, connectivity = []):
         # data is list of State objects (describing motion of vertices)
         self.data = data
+        self.connectivity = connectivity
 
         # //implementation of .clone() for the array
     def clone(self):
         temparr = []
         for a in self.data:
             temparr.append(a.clone())
-        return  DataList(temparr)
+        return  DataList(temparr, self.connectivity)
+    
+    def combine(self, dataList):
+        tempsarr = []
+        tempcarr = []
+
+        # Combine state data
+        for a in self.data:
+            tempsarr.append(a.clone())
+        for b in dataList.data:
+            tempsarr.append(b.clone())
+
+        # Combine connectivity data
+        if len(self.connectivity) != 0:
+            tempcarr = tempcarr + self.connectivity
+        if len(dataList.connectivity) != 0:
+                for c in dataList.connectivity:
+                    c = [c[0] + len(self.data), c[1] + len(self.data)]
+                    tempcarr.append(c)
+        return DataList(tempsarr,tempcarr)
+        
 
     # //implementing .add() componentwise (between datalists)
     def add(self, dataList ):

@@ -198,7 +198,36 @@ def killingvecs3(pos, v, dir):
     return np.array([ad, bd, gd])
 
 
+##########################
+# Import Build Functions #
+##########################
 
+def genballe3(center,rad):
+    u, v = np.mgrid[0:np.pi+(np.pi)/15.:(np.pi)/15., 0:2.*np.pi+(2.*np.pi)/15.:(2.*np.pi)/15.]
+    x = rad*np.sin(u)*np.cos(v)
+    y = rad*np.sin(u)*np.sin(v)
+    z = rad*np.cos(u)
 
+    for b in range(u.shape[1]):
+        for a in range(u.shape[0]):
+            # This method currently does not preserve the orientation of the sphere (need to update if we wanted to have some applied texture)
+            testarr=np.array([x[b,a],y[b,a],z[b,a]]) + center
+            x[b,a],y[b,a],z[b,a]=testarr[0],testarr[1],testarr[2]
 
+    return x,y,z
+
+def genballh3(center,rad):
+    u, v = np.mgrid[0:np.pi+(np.pi)/15.:(np.pi)/15., 0:2.*np.pi+(2.*np.pi)/15.:(2.*np.pi)/15.]
+    x = np.sinh(rad)*np.sin(u)*np.cos(v)
+    y = np.sinh(rad)*np.sin(u)*np.sin(v)
+    z = np.sinh(rad)*np.cos(u)
+    w = np.full(u.shape,np.cosh(rad))
+
+    for b in range(u.shape[1]):
+        for a in range(u.shape[0]):
+            # This method currently does not preserve the orientation of the sphere (need to update if we wanted to have some applied texture)
+            testarr=rotxh3(np.arctan2(center[2],center[1])) @ rotzh3(np.arctan2((rotxh3(-np.arctan2(center[2],center[1])) @ center)[1],(rotxh3(-np.arctan2(center[2],center[1])) @ center)[0])) @ boostxh3(np.arccosh(center[3])) @ np.array([x[b,a],y[b,a],z[b,a],w[b,a]])
+            x[b,a],y[b,a],z[b,a],w[b,a]=testarr[0],testarr[1],testarr[2],testarr[3]
+
+    return x/(w+1.),y/(w+1.),z/(w+1.)
 
