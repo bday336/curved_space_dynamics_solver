@@ -1,4 +1,5 @@
 import numpy as np
+from numpy import cos, sin, tan, cosh, sinh, tanh, sqrt, arccosh
 
 from src.AmbientSpace.Components.Geometry import Geometry
 from src.AmbientSpace.Components.Model import Model
@@ -96,12 +97,68 @@ def hypChristoffel(state):
 
 # Rotational Parameterization
     ddalpha = .5 * np.sinh(2. * alpha) * (dbeta**2. + np.sin(beta)**2. * dgamma**2.)
-    ddbeta  = np.sin(2. * beta) * dgamma**2. - 2. / np.tanh(alpha) * dbeta * dalpha
+    ddbeta  = .5 * np.sin(2. * beta) * dgamma**2. - 2. / np.tanh(alpha) * dbeta * dalpha
     ddgamma = -2. * dgamma * (dbeta / np.tan(beta) + dalpha / np.tanh(alpha))
 
     acc = np.array([ddalpha, ddbeta, ddgamma])
 
     return acc
+
+def hyp_gen_jacobian(state):
+
+    pos = state.pos.copy()
+    vel = state.vel.copy()
+
+    alpha = pos[0]
+    beta  = pos[1]
+    gamma = pos[2]
+
+    dalpha = vel[0]
+    dbeta  = vel[1]
+    dgamma = vel[2]
+
+    # Below the labeling corresponds with:
+    # daddalpha  -> derivative of ddalpha (see hypChristoffel()) with respect to alpha
+    # ddaddalpha -> derivative of ddalpha (see hypChristoffel()) with respect to dalpha
+    #---------- 
+
+    daddalpha = cosh(2.*alpha) * (dbeta**2. + sin(beta)**2.*dgamma**2.)
+    dbddalpha = cos(beta)*sin(beta)*sinh(2.*alpha)*dgamma**2.
+    dgddalpha = 0.
+
+    ddaddalpha = 0.
+    ddbddalpha = sinh(2.*alpha)*dbeta
+    ddgddalpha = sin(beta)**2.*sinh(2.*alpha)*dgamma
+
+    #----------
+
+    daddbeta = 2./sinh(alpha)**2.*(dalpha*dbeta)
+    dbddbeta = cos(2.*beta)*dgamma**2.
+    dgddbeta = 0.
+
+    ddaddbeta = -2./tanh(alpha)*dbeta
+    ddbddbeta = -2./tanh(alpha)*dalpha
+    ddgddbeta = sin(2.*beta)*dgamma
+
+    #------------
+
+    daddgamma = 2./sinh(alpha)**2.*(dalpha*dgamma)
+    dbddgamma = 2./sin(beta)**2.*(dbeta*dgamma)
+    dgddgamma = 0.
+
+    ddaddgamma = -2./tanh(alpha)*dgamma
+    ddbddgamma = -2./tan(beta)*dgamma
+    ddgddgamma = -2.*(dalpha/tanh(alpha) + dbeta/tan(beta))
+
+
+    return np.array([
+        [0., 0., 0.,  1., 0., 0.],
+        [0., 0., 0.,  0., 1., 0.],
+        [0., 0., 0.,  0., 0., 1.],
+        [daddalpha,dbddalpha,dgddalpha, ddaddalpha,ddbddalpha,ddgddalpha],
+        [daddbeta ,dbddbeta ,dgddbeta , ddaddbeta ,ddbddbeta ,ddgddbeta ],
+        [daddgamma,dbddgamma,dgddgamma, ddaddgamma,ddbddgamma,ddgddgamma]
+    ])
 
 def hypDistance(pos1, pos2):
 
@@ -136,11 +193,112 @@ def dg1D12(state1, state2):
 # db2D12 = db1D12(state2, state1)
 # dg2D12 = dg1D12(state2, state1)
 
+# Second Derivatives of distance function (Only needed for implicit methods for jacobian construction)
+def da1D12a1(state1, state2):
+    a1,b1,g1 = state1.pos.copy()
+    a2,b2,g2 = state2.pos.copy()
+    return cosh(a1)*cosh(a2) - sinh(a1)*cos(b1)*sinh(a2)*cos(b2) - sinh(a1)*sin(b1)*sinh(a2)*sin(b2)*cos(g1 - g2)
+
+def db1D12a1(state1, state2):
+    a1,b1,g1 = state1.pos.copy()
+    a2,b2,g2 = state2.pos.copy()
+    return cosh(a1)*sin(b1)*sinh(a2)*cos(b2) - cosh(a1)*cos(b1)*sinh(a2)*sin(b2)*cos(g1 - g2)
+
+def dg1D12a1(state1, state2):
+    a1,b1,g1 = state1.pos.copy()
+    a2,b2,g2 = state2.pos.copy()
+    return cosh(a1)*sin(b1)*sinh(a2)*sin(b2)*sin(g1 - g2)
+
+def da2D12a1(state1, state2):
+    a1,b1,g1 = state1.pos.copy()
+    a2,b2,g2 = state2.pos.copy()
+    return sinh(a1)*sinh(a2) - cosh(a1)*cos(b1)*cosh(a2)*cos(b2) - cosh(a1)*sin(b1)*cosh(a2)*sin(b2)*cos(g1 - g2)
+
+def db2D12a1(state1, state2):
+    a1,b1,g1 = state1.pos.copy()
+    a2,b2,g2 = state2.pos.copy()
+    return cosh(a1)*cos(b1)*sinh(a2)*sin(b2) - cosh(a1)*sin(b1)*sinh(a2)*cos(b2)*cos(g1 - g2)
+
+def dg2D12a1(state1, state2):
+    a1,b1,g1 = state1.pos.copy()
+    a2,b2,g2 = state2.pos.copy()
+    return -cosh(a1)*sin(b1)*sinh(a2)*sin(b2)*sin(g1 - g2)
+
+def db1D12b1(state1, state2):
+    a1,b1,g1 = state1.pos.copy()
+    a2,b2,g2 = state2.pos.copy()
+    return sinh(a1)*cos(b1)*sinh(a2)*cos(b2) + sinh(a1)*sin(b1)*sinh(a2)*sin(b2)*cos(g1 - g2)
+
+def dg1D12b1(state1, state2):
+    a1,b1,g1 = state1.pos.copy()
+    a2,b2,g2 = state2.pos.copy()
+    return sinh(a1)*cos(b1)*sinh(a2)*sin(b2)*sin(g1 - g2)
+
+def db2D12b1(state1, state2):
+    a1,b1,g1 = state1.pos.copy()
+    a2,b2,g2 = state2.pos.copy()
+    return -sinh(a1)*sin(b1)*sinh(a2)*sin(b2) - sinh(a1)*cos(b1)*sinh(a2)*cos(b2)*cos(g1 - g2)
+
+def dg2D12b1(state1, state2):
+    a1,b1,g1 = state1.pos.copy()
+    a2,b2,g2 = state2.pos.copy()
+    return -sinh(a1)*cos(b1)*sinh(a2)*sin(b2)*sin(g1 - g2)
+
+def dg1D12g1(state1, state2):
+    a1,b1,g1 = state1.pos.copy()
+    a2,b2,g2 = state2.pos.copy()
+    return sinh(a1)*sin(b1)*sinh(a2)*sin(b2)*cos(g1 - g2)
+
+def dg2D12g1(state1, state2):
+    a1,b1,g1 = state1.pos.copy()
+    a2,b2,g2 = state2.pos.copy()
+    return -sinh(a1)*sin(b1)*sinh(a2)*sin(b2)*cos(g1 - g2)
+# For the remaining nine functions of the upper triangular matrix use:
+# da2D12b1 = db2D12a1(a2, b2, g2, a1, b1, g1)
+
+# da2D12g1 = dg2D12a1(a2, b2, g2, a1, b1, g1)
+# db2D12g1 = dg2D12b1(a2, b2, g2, a1, b1, g1)
+
+# da2D12a2 = da1D12a1(a2, b2, g2, a1, b1, g1)
+# db2D12a2 = db1D12a1(a2, b2, g2, a1, b1, g1)
+# dg2D12a2 = dg1D12a1(a2, b2, g2, a1, b1, g1)
+
+# db2D12b2 = db1D12b1(a2, b2, g2, a1, b1, g1)
+# dg2D12b2 = dg1D12b1(a2, b2, g2, a1, b1, g1)
+
+# dg2D12g2 = dg1D12g1(a2, b2, g2, a1, b1, g1)
+
+# Expression to generate coupling potential terms in jacobian (i.e. second derivative of coupling potential)
+def da2da1V12(m, f, k, l, d12, da1d12, da2d12, da2f, da2d12da1):
+    # negative sign here so that the term can be added to geo terms later
+    return -k/(m*f*sqrt( d12**2. - 1. ))*( (da1d12*da2d12)/sqrt( d12**2. - 1.) + ( arccosh(d12) - l )*( da2d12da1 - da1d12*(da2f/f + d12*da2d12/(d12**2. - 1.)) ) )
+
+
 hypFuncDict = {
+    "vertex_jac" : hyp_gen_jacobian,
+
     "d12"    : D12,
+
     "da1d12" : da1D12,
     "db1d12" : db1D12,
-    "dg1d12" : dg1D12
+    "dg1d12" : dg1D12,
+
+    "da1da1d12" : da1D12a1,
+    "db1da1d12" : db1D12a1,
+    "dg1da1d12" : dg1D12a1,
+    "da2da1d12" : da2D12a1,
+    "db2da1d12" : db2D12a1,
+    "dg2da1d12" : dg2D12a1,
+
+    "db1db1d12" : db1D12b1,
+    "dg1db1d12" : dg1D12b1,
+    "db2db1d12" : db2D12b1,
+    "dg2db1d12" : dg2D12b1,
+
+    "dg1dg1d12" : dg1D12g1,
+    "dg2dg1d12" : dg2D12g1,
+
+    "coupling_derivative" : da2da1V12
     }
 
 
