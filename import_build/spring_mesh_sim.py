@@ -79,10 +79,10 @@ configurationSpace = ConfigurationSpace(masses, radii, ambientSpace)
 
 
 dt = 0.001
-tmaxNum = 20000
+tmaxNum = 1000
 
 # //make the simulation
-sim = Simulation( ambientSpace, sim_system, configurationSpace, dt )
+sim = Simulation( ambientSpace, sim_system, configurationSpace, dt , "Gauss1")
 
 for c in range(tmaxNum):
     sim.step()
@@ -248,133 +248,133 @@ fig.tight_layout()
 
 plt.show()
 
-# ------------------------------------------------------------------
-### Uncomment to just generate gif of trajectory of the particle ###
-# ------------------------------------------------------------------
+# # ------------------------------------------------------------------
+# ### Uncomment to just generate gif of trajectory of the particle ###
+# # ------------------------------------------------------------------
 
-# # Generate gif
+# # # Generate gif
 
-# First set up the figure, the axis, and the plot element we want to animate
-fig = plt.figure(figsize=(8,8))
-ax1 = fig.add_subplot(111, projection='3d')
-# ax1.set_aspect("equal")
+# # First set up the figure, the axis, and the plot element we want to animate
+# fig = plt.figure(figsize=(8,8))
+# ax1 = fig.add_subplot(111, projection='3d')
+# # ax1.set_aspect("equal")
 
-# #draw sphere
-# Draw Unit Sphere Horizon in Embedding Space (using Poincare Disk Model of Hyperbolic Space)
-u, v = np.mgrid[0:np.pi+(np.pi)/15.:(np.pi)/15., 0:2.*np.pi+(2.*np.pi)/15.:(2.*np.pi)/15.]
-x = 1.*np.sin(u)*np.cos(v)
-y = 1.*np.sin(u)*np.sin(v)
-z = 1.*np.cos(u)
-ax1.plot_wireframe(x, y, z, color="b", alpha=.1)
-ax1.set_xlim3d(-1,1)
-ax1.set_xlabel('X')
-ax1.set_ylim3d(-1,1)
-ax1.set_ylabel('Y')
-ax1.set_zlim3d(-1,1)
-ax1.set_zlabel('Z')
+# # #draw sphere
+# # Draw Unit Sphere Horizon in Embedding Space (using Poincare Disk Model of Hyperbolic Space)
+# u, v = np.mgrid[0:np.pi+(np.pi)/15.:(np.pi)/15., 0:2.*np.pi+(2.*np.pi)/15.:(2.*np.pi)/15.]
+# x = 1.*np.sin(u)*np.cos(v)
+# y = 1.*np.sin(u)*np.sin(v)
+# z = 1.*np.cos(u)
+# ax1.plot_wireframe(x, y, z, color="b", alpha=.1)
+# ax1.set_xlim3d(-1,1)
+# ax1.set_xlabel('X')
+# ax1.set_ylim3d(-1,1)
+# ax1.set_ylabel('Y')
+# ax1.set_zlim3d(-1,1)
+# ax1.set_zlabel('Z')
 
-# Bounding box
-ub, vb = np.mgrid[0:np.pi+(np.pi)/15.:(np.pi)/15., 0:2.*np.pi+(2.*np.pi)/15.:(2.*np.pi)/15.]
-xb = np.sinh(2)/(np.cosh(2)+1) * np.sin(ub)*np.cos(vb)
-yb = np.sinh(2)/(np.cosh(2)+1) * np.sin(ub)*np.sin(vb)
-zb = np.sinh(2)/(np.cosh(2)+1) * np.cos(ub)
-ax1.plot_wireframe(xb, yb, zb, color="k", alpha=.1)
+# # Bounding box
+# ub, vb = np.mgrid[0:np.pi+(np.pi)/15.:(np.pi)/15., 0:2.*np.pi+(2.*np.pi)/15.:(2.*np.pi)/15.]
+# xb = np.sinh(2)/(np.cosh(2)+1) * np.sin(ub)*np.cos(vb)
+# yb = np.sinh(2)/(np.cosh(2)+1) * np.sin(ub)*np.sin(vb)
+# zb = np.sinh(2)/(np.cosh(2)+1) * np.cos(ub)
+# ax1.plot_wireframe(xb, yb, zb, color="k", alpha=.1)
 
-# Particle Plot data
-ball_box=[]
-viz_balls=[]
+# # Particle Plot data
+# ball_box=[]
+# viz_balls=[]
 
-for h in range(len(partdata)):
-    ball_box.append(genballh3(hyppartdata[h][0],radii[h]))
-    if h == 0 or h == 1:
-        viz_balls.append([ax1.plot_surface(ball_box[-1][0], ball_box[-1][1], ball_box[-1][2], color="b")])
-    elif h == 2 or h == 3:
-        viz_balls.append([ax1.plot_surface(ball_box[-1][0], ball_box[-1][1], ball_box[-1][2], color="r")])
-    elif h == 4 or h == 5:
-        viz_balls.append([ax1.plot_surface(ball_box[-1][0], ball_box[-1][1], ball_box[-1][2], color="g")])
+# for h in range(len(partdata)):
+#     ball_box.append(genballh3(hyppartdata[h][0],radii[h]))
+#     if h == 0 or h == 1:
+#         viz_balls.append([ax1.plot_surface(ball_box[-1][0], ball_box[-1][1], ball_box[-1][2], color="b")])
+#     elif h == 2 or h == 3:
+#         viz_balls.append([ax1.plot_surface(ball_box[-1][0], ball_box[-1][1], ball_box[-1][2], color="r")])
+#     elif h == 4 or h == 5:
+#         viz_balls.append([ax1.plot_surface(ball_box[-1][0], ball_box[-1][1], ball_box[-1][2], color="g")])
 
-# ball_box.append(genballh3(hyppart1plot[0],radii[0])) #hypercirch3(array([sinh(gat[a])*sin(gbt[a])*cos(ggt[a]),sinh(gat[a])*sin(gbt[a])*sin(ggt[a]),sinh(gat[a])*cos(gbt[a]),cosh(gat[a])]),.1))
-# viz_balls.append([ax1.plot_surface(ball_box[-1][0], ball_box[-1][1], ball_box[-1][2], color="b")])
+# # ball_box.append(genballh3(hyppart1plot[0],radii[0])) #hypercirch3(array([sinh(gat[a])*sin(gbt[a])*cos(ggt[a]),sinh(gat[a])*sin(gbt[a])*sin(ggt[a]),sinh(gat[a])*cos(gbt[a]),cosh(gat[a])]),.1))
+# # viz_balls.append([ax1.plot_surface(ball_box[-1][0], ball_box[-1][1], ball_box[-1][2], color="b")])
 
-# ball_box.append(genballh3(hyppart2plot[0],radii[1])) #hypercirch3(array([sinh(gat[a])*sin(gbt[a])*cos(ggt[a]),sinh(gat[a])*sin(gbt[a])*sin(ggt[a]),sinh(gat[a])*cos(gbt[a]),cosh(gat[a])]),.1))
-# viz_balls.append([ax1.plot_surface(ball_box[-1][0], ball_box[-1][1], ball_box[-1][2], color="b")])
+# # ball_box.append(genballh3(hyppart2plot[0],radii[1])) #hypercirch3(array([sinh(gat[a])*sin(gbt[a])*cos(ggt[a]),sinh(gat[a])*sin(gbt[a])*sin(ggt[a]),sinh(gat[a])*cos(gbt[a]),cosh(gat[a])]),.1))
+# # viz_balls.append([ax1.plot_surface(ball_box[-1][0], ball_box[-1][1], ball_box[-1][2], color="b")])
 
-# ball_box.append(genballh3(hyppart3plot[0],radii[2])) #hypercirch3(array([sinh(gat[a])*sin(gbt[a])*cos(ggt[a]),sinh(gat[a])*sin(gbt[a])*sin(ggt[a]),sinh(gat[a])*cos(gbt[a]),cosh(gat[a])]),.1))
-# viz_balls.append([ax1.plot_surface(ball_box[-1][0], ball_box[-1][1], ball_box[-1][2], color="r")])
+# # ball_box.append(genballh3(hyppart3plot[0],radii[2])) #hypercirch3(array([sinh(gat[a])*sin(gbt[a])*cos(ggt[a]),sinh(gat[a])*sin(gbt[a])*sin(ggt[a]),sinh(gat[a])*cos(gbt[a]),cosh(gat[a])]),.1))
+# # viz_balls.append([ax1.plot_surface(ball_box[-1][0], ball_box[-1][1], ball_box[-1][2], color="r")])
 
-# ball_box.append(genballh3(hyppart4plot[0],radii[3])) #hypercirch3(array([sinh(gat[a])*sin(gbt[a])*cos(ggt[a]),sinh(gat[a])*sin(gbt[a])*sin(ggt[a]),sinh(gat[a])*cos(gbt[a]),cosh(gat[a])]),.1))
-# viz_balls.append([ax1.plot_surface(ball_box[-1][0], ball_box[-1][1], ball_box[-1][2], color="r")])
+# # ball_box.append(genballh3(hyppart4plot[0],radii[3])) #hypercirch3(array([sinh(gat[a])*sin(gbt[a])*cos(ggt[a]),sinh(gat[a])*sin(gbt[a])*sin(ggt[a]),sinh(gat[a])*cos(gbt[a]),cosh(gat[a])]),.1))
+# # viz_balls.append([ax1.plot_surface(ball_box[-1][0], ball_box[-1][1], ball_box[-1][2], color="r")])
 
-# #draw trajectory
-# for b in range(vert_num):
-#     ax1.plot3D(gut[b::vert_num],gvt[b::vert_num],grt[b::vert_num], label="particle []".format(b))
-# ax1.legend(loc= 'lower left')
+# # #draw trajectory
+# # for b in range(vert_num):
+# #     ax1.plot3D(gut[b::vert_num],gvt[b::vert_num],grt[b::vert_num], label="particle []".format(b))
+# # ax1.legend(loc= 'lower left')
 
-# part1x,part1y,part1z=hypercirch3(array([sinh(gat[0::3][0])*sin(gbt[0::3][0])*cos(ggt[0::3][0]),sinh(gat[0::3][0])*sin(gbt[0::3][0])*sin(ggt[0::3][0]),sinh(gat[0::3][0])*cos(gbt[0::3][0]),cosh(gat[0::3][0])]),particles[0][7])
-# part2x,part2y,part2z=hypercirch3(array([sinh(gat[1::3][1])*sin(gbt[1::3][1])*cos(ggt[1::3][1]),sinh(gat[1::3][1])*sin(gbt[1::3][1])*sin(ggt[1::3][1]),sinh(gat[1::3][1])*cos(gbt[1::3][1]),cosh(gat[1::3][1])]),particles[1][7])
-# part3x,part3y,part3z=hypercirch3(array([sinh(gat[2::3][2])*sin(gbt[2::3][2])*cos(ggt[2::3][2]),sinh(gat[2::3][2])*sin(gbt[2::3][2])*sin(ggt[2::3][2]),sinh(gat[2::3][2])*cos(gbt[2::3][2]),cosh(gat[2::3][2])]),particles[2][7])
-# ball1=[ax1.plot_surface(part1x,part1y,part1z, color="b")]
-# ball2=[ax1.plot_surface(part2x,part2y,part2z, color="r")]
-# ball3=[ax1.plot_surface(part3x,part3y,part3z, color="k")]
+# # part1x,part1y,part1z=hypercirch3(array([sinh(gat[0::3][0])*sin(gbt[0::3][0])*cos(ggt[0::3][0]),sinh(gat[0::3][0])*sin(gbt[0::3][0])*sin(ggt[0::3][0]),sinh(gat[0::3][0])*cos(gbt[0::3][0]),cosh(gat[0::3][0])]),particles[0][7])
+# # part2x,part2y,part2z=hypercirch3(array([sinh(gat[1::3][1])*sin(gbt[1::3][1])*cos(ggt[1::3][1]),sinh(gat[1::3][1])*sin(gbt[1::3][1])*sin(ggt[1::3][1]),sinh(gat[1::3][1])*cos(gbt[1::3][1]),cosh(gat[1::3][1])]),particles[1][7])
+# # part3x,part3y,part3z=hypercirch3(array([sinh(gat[2::3][2])*sin(gbt[2::3][2])*cos(ggt[2::3][2]),sinh(gat[2::3][2])*sin(gbt[2::3][2])*sin(ggt[2::3][2]),sinh(gat[2::3][2])*cos(gbt[2::3][2]),cosh(gat[2::3][2])]),particles[2][7])
+# # ball1=[ax1.plot_surface(part1x,part1y,part1z, color="b")]
+# # ball2=[ax1.plot_surface(part2x,part2y,part2z, color="r")]
+# # ball3=[ax1.plot_surface(part3x,part3y,part3z, color="k")]
 
-# animation function. This is called sequentially
-frames=100
-def animate(i):
-    for j in range(len(partdata)):
-        ax1.plot3D(partdata[j][:int(tmaxNum*i/frames),0],partdata[j][:int(tmaxNum*i/frames),1],partdata[j][:int(tmaxNum*i/frames),2])
+# # animation function. This is called sequentially
+# frames=100
+# def animate(i):
+#     for j in range(len(partdata)):
+#         ax1.plot3D(partdata[j][:int(tmaxNum*i/frames),0],partdata[j][:int(tmaxNum*i/frames),1],partdata[j][:int(tmaxNum*i/frames),2])
 
-        ball_box.append(genballh3(hyppartdata[j][int(tmaxNum*i/frames)],radii[j])) #array([sinh(gat[b::vert_num][int(len(timearr)*i/frames)])*sin(gbt[b::vert_num][int(len(timearr)*i/frames)])*cos(ggt[b::vert_num][int(len(timearr)*i/frames)]),sinh(gat[b::vert_num][int(len(timearr)*i/frames)])*sin(gbt[b::vert_num][int(len(timearr)*i/frames)])*sin(ggt[b::vert_num][int(len(timearr)*i/frames)]),sinh(gat[b::vert_num][int(len(timearr)*i/frames)])*cos(gbt[b::vert_num][int(len(timearr)*i/frames)]),cosh(gat[b::vert_num][int(len(timearr)*i/frames)])]),.1))
-        viz_balls[j][0].remove()
-        if j == 0 or j == 1:
-            viz_balls[j][0]=ax1.plot_surface(ball_box[-1][0], ball_box[-1][1], ball_box[-1][2], color="b")
-        elif j == 2 or j == 3:
-            viz_balls[j][0]=ax1.plot_surface(ball_box[-1][0], ball_box[-1][1], ball_box[-1][2], color="r")
-        elif j == 4 or j == 5:
-            viz_balls[j][0]=ax1.plot_surface(ball_box[-1][0], ball_box[-1][1], ball_box[-1][2], color="g")
+#         ball_box.append(genballh3(hyppartdata[j][int(tmaxNum*i/frames)],radii[j])) #array([sinh(gat[b::vert_num][int(len(timearr)*i/frames)])*sin(gbt[b::vert_num][int(len(timearr)*i/frames)])*cos(ggt[b::vert_num][int(len(timearr)*i/frames)]),sinh(gat[b::vert_num][int(len(timearr)*i/frames)])*sin(gbt[b::vert_num][int(len(timearr)*i/frames)])*sin(ggt[b::vert_num][int(len(timearr)*i/frames)]),sinh(gat[b::vert_num][int(len(timearr)*i/frames)])*cos(gbt[b::vert_num][int(len(timearr)*i/frames)]),cosh(gat[b::vert_num][int(len(timearr)*i/frames)])]),.1))
+#         viz_balls[j][0].remove()
+#         if j == 0 or j == 1:
+#             viz_balls[j][0]=ax1.plot_surface(ball_box[-1][0], ball_box[-1][1], ball_box[-1][2], color="b")
+#         elif j == 2 or j == 3:
+#             viz_balls[j][0]=ax1.plot_surface(ball_box[-1][0], ball_box[-1][1], ball_box[-1][2], color="r")
+#         elif j == 4 or j == 5:
+#             viz_balls[j][0]=ax1.plot_surface(ball_box[-1][0], ball_box[-1][1], ball_box[-1][2], color="g")
 
-    # ax1.plot3D(part1plot[:int(tmaxNum*i/frames),0],part1plot[:int(tmaxNum*i/frames),1],part1plot[:int(tmaxNum*i/frames),2])
-    # ax1.plot3D(part2plot[:int(tmaxNum*i/frames),0],part2plot[:int(tmaxNum*i/frames),1],part2plot[:int(tmaxNum*i/frames),2])
-    # ax1.plot3D(part3plot[:int(tmaxNum*i/frames),0],part3plot[:int(tmaxNum*i/frames),1],part3plot[:int(tmaxNum*i/frames),2])
-    # ax1.plot3D(part4plot[:int(tmaxNum*i/frames),0],part4plot[:int(tmaxNum*i/frames),1],part4plot[:int(tmaxNum*i/frames),2])
-    # ax1.legend(loc= 'lower left')
+#     # ax1.plot3D(part1plot[:int(tmaxNum*i/frames),0],part1plot[:int(tmaxNum*i/frames),1],part1plot[:int(tmaxNum*i/frames),2])
+#     # ax1.plot3D(part2plot[:int(tmaxNum*i/frames),0],part2plot[:int(tmaxNum*i/frames),1],part2plot[:int(tmaxNum*i/frames),2])
+#     # ax1.plot3D(part3plot[:int(tmaxNum*i/frames),0],part3plot[:int(tmaxNum*i/frames),1],part3plot[:int(tmaxNum*i/frames),2])
+#     # ax1.plot3D(part4plot[:int(tmaxNum*i/frames),0],part4plot[:int(tmaxNum*i/frames),1],part4plot[:int(tmaxNum*i/frames),2])
+#     # ax1.legend(loc= 'lower left')
 
-    # ball_box.append(genballh3(hyppart1plot[int(tmaxNum*i/frames)],radii[0])) #array([sinh(gat[b::vert_num][int(len(timearr)*i/frames)])*sin(gbt[b::vert_num][int(len(timearr)*i/frames)])*cos(ggt[b::vert_num][int(len(timearr)*i/frames)]),sinh(gat[b::vert_num][int(len(timearr)*i/frames)])*sin(gbt[b::vert_num][int(len(timearr)*i/frames)])*sin(ggt[b::vert_num][int(len(timearr)*i/frames)]),sinh(gat[b::vert_num][int(len(timearr)*i/frames)])*cos(gbt[b::vert_num][int(len(timearr)*i/frames)]),cosh(gat[b::vert_num][int(len(timearr)*i/frames)])]),.1))
-    # viz_balls[0][0].remove()
-    # viz_balls[0][0]=ax1.plot_surface(ball_box[-1][0], ball_box[-1][1], ball_box[-1][2], color="b")
-    # ball_box.append(genballh3(hyppart2plot[int(tmaxNum*i/frames)],radii[1])) #array([sinh(gat[b::vert_num][int(len(timearr)*i/frames)])*sin(gbt[b::vert_num][int(len(timearr)*i/frames)])*cos(ggt[b::vert_num][int(len(timearr)*i/frames)]),sinh(gat[b::vert_num][int(len(timearr)*i/frames)])*sin(gbt[b::vert_num][int(len(timearr)*i/frames)])*sin(ggt[b::vert_num][int(len(timearr)*i/frames)]),sinh(gat[b::vert_num][int(len(timearr)*i/frames)])*cos(gbt[b::vert_num][int(len(timearr)*i/frames)]),cosh(gat[b::vert_num][int(len(timearr)*i/frames)])]),.1))
-    # viz_balls[1][0].remove()
-    # viz_balls[1][0]=ax1.plot_surface(ball_box[-1][0], ball_box[-1][1], ball_box[-1][2], color="b")
-    # ball_box.append(genballh3(hyppart3plot[int(tmaxNum*i/frames)],radii[0])) #array([sinh(gat[b::vert_num][int(len(timearr)*i/frames)])*sin(gbt[b::vert_num][int(len(timearr)*i/frames)])*cos(ggt[b::vert_num][int(len(timearr)*i/frames)]),sinh(gat[b::vert_num][int(len(timearr)*i/frames)])*sin(gbt[b::vert_num][int(len(timearr)*i/frames)])*sin(ggt[b::vert_num][int(len(timearr)*i/frames)]),sinh(gat[b::vert_num][int(len(timearr)*i/frames)])*cos(gbt[b::vert_num][int(len(timearr)*i/frames)]),cosh(gat[b::vert_num][int(len(timearr)*i/frames)])]),.1))
-    # viz_balls[2][0].remove()
-    # viz_balls[2][0]=ax1.plot_surface(ball_box[-1][0], ball_box[-1][1], ball_box[-1][2], color="r")
-    # ball_box.append(genballh3(hyppart4plot[int(tmaxNum*i/frames)],radii[1])) #array([sinh(gat[b::vert_num][int(len(timearr)*i/frames)])*sin(gbt[b::vert_num][int(len(timearr)*i/frames)])*cos(ggt[b::vert_num][int(len(timearr)*i/frames)]),sinh(gat[b::vert_num][int(len(timearr)*i/frames)])*sin(gbt[b::vert_num][int(len(timearr)*i/frames)])*sin(ggt[b::vert_num][int(len(timearr)*i/frames)]),sinh(gat[b::vert_num][int(len(timearr)*i/frames)])*cos(gbt[b::vert_num][int(len(timearr)*i/frames)]),cosh(gat[b::vert_num][int(len(timearr)*i/frames)])]),.1))
-    # viz_balls[3][0].remove()
-    # viz_balls[3][0]=ax1.plot_surface(ball_box[-1][0], ball_box[-1][1], ball_box[-1][2], color="r")
+#     # ball_box.append(genballh3(hyppart1plot[int(tmaxNum*i/frames)],radii[0])) #array([sinh(gat[b::vert_num][int(len(timearr)*i/frames)])*sin(gbt[b::vert_num][int(len(timearr)*i/frames)])*cos(ggt[b::vert_num][int(len(timearr)*i/frames)]),sinh(gat[b::vert_num][int(len(timearr)*i/frames)])*sin(gbt[b::vert_num][int(len(timearr)*i/frames)])*sin(ggt[b::vert_num][int(len(timearr)*i/frames)]),sinh(gat[b::vert_num][int(len(timearr)*i/frames)])*cos(gbt[b::vert_num][int(len(timearr)*i/frames)]),cosh(gat[b::vert_num][int(len(timearr)*i/frames)])]),.1))
+#     # viz_balls[0][0].remove()
+#     # viz_balls[0][0]=ax1.plot_surface(ball_box[-1][0], ball_box[-1][1], ball_box[-1][2], color="b")
+#     # ball_box.append(genballh3(hyppart2plot[int(tmaxNum*i/frames)],radii[1])) #array([sinh(gat[b::vert_num][int(len(timearr)*i/frames)])*sin(gbt[b::vert_num][int(len(timearr)*i/frames)])*cos(ggt[b::vert_num][int(len(timearr)*i/frames)]),sinh(gat[b::vert_num][int(len(timearr)*i/frames)])*sin(gbt[b::vert_num][int(len(timearr)*i/frames)])*sin(ggt[b::vert_num][int(len(timearr)*i/frames)]),sinh(gat[b::vert_num][int(len(timearr)*i/frames)])*cos(gbt[b::vert_num][int(len(timearr)*i/frames)]),cosh(gat[b::vert_num][int(len(timearr)*i/frames)])]),.1))
+#     # viz_balls[1][0].remove()
+#     # viz_balls[1][0]=ax1.plot_surface(ball_box[-1][0], ball_box[-1][1], ball_box[-1][2], color="b")
+#     # ball_box.append(genballh3(hyppart3plot[int(tmaxNum*i/frames)],radii[0])) #array([sinh(gat[b::vert_num][int(len(timearr)*i/frames)])*sin(gbt[b::vert_num][int(len(timearr)*i/frames)])*cos(ggt[b::vert_num][int(len(timearr)*i/frames)]),sinh(gat[b::vert_num][int(len(timearr)*i/frames)])*sin(gbt[b::vert_num][int(len(timearr)*i/frames)])*sin(ggt[b::vert_num][int(len(timearr)*i/frames)]),sinh(gat[b::vert_num][int(len(timearr)*i/frames)])*cos(gbt[b::vert_num][int(len(timearr)*i/frames)]),cosh(gat[b::vert_num][int(len(timearr)*i/frames)])]),.1))
+#     # viz_balls[2][0].remove()
+#     # viz_balls[2][0]=ax1.plot_surface(ball_box[-1][0], ball_box[-1][1], ball_box[-1][2], color="r")
+#     # ball_box.append(genballh3(hyppart4plot[int(tmaxNum*i/frames)],radii[1])) #array([sinh(gat[b::vert_num][int(len(timearr)*i/frames)])*sin(gbt[b::vert_num][int(len(timearr)*i/frames)])*cos(ggt[b::vert_num][int(len(timearr)*i/frames)]),sinh(gat[b::vert_num][int(len(timearr)*i/frames)])*sin(gbt[b::vert_num][int(len(timearr)*i/frames)])*sin(ggt[b::vert_num][int(len(timearr)*i/frames)]),sinh(gat[b::vert_num][int(len(timearr)*i/frames)])*cos(gbt[b::vert_num][int(len(timearr)*i/frames)]),cosh(gat[b::vert_num][int(len(timearr)*i/frames)])]),.1))
+#     # viz_balls[3][0].remove()
+#     # viz_balls[3][0]=ax1.plot_surface(ball_box[-1][0], ball_box[-1][1], ball_box[-1][2], color="r")
     
-    # ax1.plot3D(gut[b::vert_num][:int(len(timearr)*i/frames)],gvt[b::vert_num][:int(len(timearr)*i/frames)],grt[b::vert_num][:int(len(timearr)*i/frames)], label="particle 1")
-    # for b in range(vert_num):
-    #     ax1.plot3D(gut[b::vert_num][:int(len(timearr)*i/frames)],gvt[b::vert_num][:int(len(timearr)*i/frames)],grt[b::vert_num][:int(len(timearr)*i/frames)], label="particle {}".format(b))
-    # ax1.plot3D(gut[0::3][:int(len(timearr)*i/frames)],gvt[0::3][:int(len(timearr)*i/frames)],grt[0::3][:int(len(timearr)*i/frames)])
-    # ax1.plot3D(gut[1::3][:int(len(timearr)*i/frames)],gvt[1::3][:int(len(timearr)*i/frames)],grt[1::3][:int(len(timearr)*i/frames)])
-    # ax1.plot3D(gut[2::3][:int(len(timearr)*i/frames)],gvt[2::3][:int(len(timearr)*i/frames)],grt[2::3][:int(len(timearr)*i/frames)])
-        # part_plot.append(genballh3(array([sinh(gat[b::vert_num][int(len(timearr)*i/frames)])*sin(gbt[b::vert_num][int(len(timearr)*i/frames)])*cos(ggt[b::vert_num][int(len(timearr)*i/frames)]),sinh(gat[b::vert_num][int(len(timearr)*i/frames)])*sin(gbt[b::vert_num][int(len(timearr)*i/frames)])*sin(ggt[b::vert_num][int(len(timearr)*i/frames)]),sinh(gat[b::vert_num][int(len(timearr)*i/frames)])*cos(gbt[b::vert_num][int(len(timearr)*i/frames)]),cosh(gat[b::vert_num][int(len(timearr)*i/frames)])]),.1))
-        # viz_balls[b][0].remove()
-        # viz_balls[b][0]=ax1.plot_surface(ball_box[-1][0], ball_box[-1][1], ball_box[-1][2], color="b")
-    # part1x,part1y,part1z=hypercirch3(array([sinh(gat[0::3][int(len(timearr)*i/frames)])*sin(gbt[0::3][int(len(timearr)*i/frames)])*cos(ggt[0::3][int(len(timearr)*i/frames)]),sinh(gat[0::3][int(len(timearr)*i/frames)])*sin(gbt[0::3][int(len(timearr)*i/frames)])*sin(ggt[0::3][int(len(timearr)*i/frames)]),sinh(gat[0::3][int(len(timearr)*i/frames)])*cos(gbt[0::3][int(len(timearr)*i/frames)]),cosh(gat[0::3][int(len(timearr)*i/frames)])]),particles[0][7])
-    # part2x,part2y,part2z=hypercirch3(array([sinh(gat[1::3][int(len(timearr)*i/frames)])*sin(gbt[1::3][int(len(timearr)*i/frames)])*cos(ggt[1::3][int(len(timearr)*i/frames)]),sinh(gat[1::3][int(len(timearr)*i/frames)])*sin(gbt[1::3][int(len(timearr)*i/frames)])*sin(ggt[1::3][int(len(timearr)*i/frames)]),sinh(gat[1::3][int(len(timearr)*i/frames)])*cos(gbt[1::3][int(len(timearr)*i/frames)]),cosh(gat[1::3][int(len(timearr)*i/frames)])]),particles[1][7])
-    # part3x,part3y,part3z=hypercirch3(array([sinh(gat[2::3][int(len(timearr)*i/frames)])*sin(gbt[2::3][int(len(timearr)*i/frames)])*cos(ggt[2::3][int(len(timearr)*i/frames)]),sinh(gat[2::3][int(len(timearr)*i/frames)])*sin(gbt[2::3][int(len(timearr)*i/frames)])*sin(ggt[2::3][int(len(timearr)*i/frames)]),sinh(gat[2::3][int(len(timearr)*i/frames)])*cos(gbt[2::3][int(len(timearr)*i/frames)]),cosh(gat[2::3][int(len(timearr)*i/frames)])]),particles[2][7])
-    # ball1[0].remove()
-    # ball1[0]=ax1.plot_surface(part1x,part1y,part1z, color="b")
-    # ball2[0].remove()
-    # ball2[0]=ax1.plot_surface(part2x,part2y,part2z, color="r")
-    # ball3[0].remove()
-    # ball3[0]=ax1.plot_surface(part3x,part3y,part3z, color="k")
+#     # ax1.plot3D(gut[b::vert_num][:int(len(timearr)*i/frames)],gvt[b::vert_num][:int(len(timearr)*i/frames)],grt[b::vert_num][:int(len(timearr)*i/frames)], label="particle 1")
+#     # for b in range(vert_num):
+#     #     ax1.plot3D(gut[b::vert_num][:int(len(timearr)*i/frames)],gvt[b::vert_num][:int(len(timearr)*i/frames)],grt[b::vert_num][:int(len(timearr)*i/frames)], label="particle {}".format(b))
+#     # ax1.plot3D(gut[0::3][:int(len(timearr)*i/frames)],gvt[0::3][:int(len(timearr)*i/frames)],grt[0::3][:int(len(timearr)*i/frames)])
+#     # ax1.plot3D(gut[1::3][:int(len(timearr)*i/frames)],gvt[1::3][:int(len(timearr)*i/frames)],grt[1::3][:int(len(timearr)*i/frames)])
+#     # ax1.plot3D(gut[2::3][:int(len(timearr)*i/frames)],gvt[2::3][:int(len(timearr)*i/frames)],grt[2::3][:int(len(timearr)*i/frames)])
+#         # part_plot.append(genballh3(array([sinh(gat[b::vert_num][int(len(timearr)*i/frames)])*sin(gbt[b::vert_num][int(len(timearr)*i/frames)])*cos(ggt[b::vert_num][int(len(timearr)*i/frames)]),sinh(gat[b::vert_num][int(len(timearr)*i/frames)])*sin(gbt[b::vert_num][int(len(timearr)*i/frames)])*sin(ggt[b::vert_num][int(len(timearr)*i/frames)]),sinh(gat[b::vert_num][int(len(timearr)*i/frames)])*cos(gbt[b::vert_num][int(len(timearr)*i/frames)]),cosh(gat[b::vert_num][int(len(timearr)*i/frames)])]),.1))
+#         # viz_balls[b][0].remove()
+#         # viz_balls[b][0]=ax1.plot_surface(ball_box[-1][0], ball_box[-1][1], ball_box[-1][2], color="b")
+#     # part1x,part1y,part1z=hypercirch3(array([sinh(gat[0::3][int(len(timearr)*i/frames)])*sin(gbt[0::3][int(len(timearr)*i/frames)])*cos(ggt[0::3][int(len(timearr)*i/frames)]),sinh(gat[0::3][int(len(timearr)*i/frames)])*sin(gbt[0::3][int(len(timearr)*i/frames)])*sin(ggt[0::3][int(len(timearr)*i/frames)]),sinh(gat[0::3][int(len(timearr)*i/frames)])*cos(gbt[0::3][int(len(timearr)*i/frames)]),cosh(gat[0::3][int(len(timearr)*i/frames)])]),particles[0][7])
+#     # part2x,part2y,part2z=hypercirch3(array([sinh(gat[1::3][int(len(timearr)*i/frames)])*sin(gbt[1::3][int(len(timearr)*i/frames)])*cos(ggt[1::3][int(len(timearr)*i/frames)]),sinh(gat[1::3][int(len(timearr)*i/frames)])*sin(gbt[1::3][int(len(timearr)*i/frames)])*sin(ggt[1::3][int(len(timearr)*i/frames)]),sinh(gat[1::3][int(len(timearr)*i/frames)])*cos(gbt[1::3][int(len(timearr)*i/frames)]),cosh(gat[1::3][int(len(timearr)*i/frames)])]),particles[1][7])
+#     # part3x,part3y,part3z=hypercirch3(array([sinh(gat[2::3][int(len(timearr)*i/frames)])*sin(gbt[2::3][int(len(timearr)*i/frames)])*cos(ggt[2::3][int(len(timearr)*i/frames)]),sinh(gat[2::3][int(len(timearr)*i/frames)])*sin(gbt[2::3][int(len(timearr)*i/frames)])*sin(ggt[2::3][int(len(timearr)*i/frames)]),sinh(gat[2::3][int(len(timearr)*i/frames)])*cos(gbt[2::3][int(len(timearr)*i/frames)]),cosh(gat[2::3][int(len(timearr)*i/frames)])]),particles[2][7])
+#     # ball1[0].remove()
+#     # ball1[0]=ax1.plot_surface(part1x,part1y,part1z, color="b")
+#     # ball2[0].remove()
+#     # ball2[0]=ax1.plot_surface(part2x,part2y,part2z, color="r")
+#     # ball3[0].remove()
+#     # ball3[0]=ax1.plot_surface(part3x,part3y,part3z, color="k")
 
-# equivalent to rcParams['animation.html'] = 'html5'
-rc('animation', html='html5')
+# # equivalent to rcParams['animation.html'] = 'html5'
+# rc('animation', html='html5')
 
-# call the animator. blit=True means only re-draw the parts that 
-# have changed.
-anim = animation.FuncAnimation(fig, animate,frames=frames, interval=50)
+# # call the animator. blit=True means only re-draw the parts that 
+# # have changed.
+# anim = animation.FuncAnimation(fig, animate,frames=frames, interval=50)
 
-anim.save('./h3springmeshtest.mov', writer='imagemagick')
+# anim.save('./h3springmeshtest.mov', writer='imagemagick')

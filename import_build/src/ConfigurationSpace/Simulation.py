@@ -1,5 +1,6 @@
 from src.Computation.DataList import DataList
 from src.Computation.RungeKutta import RungeKutta
+from src.Computation.Gauss1 import Gauss1
 
 class Simulation:
     """
@@ -42,11 +43,12 @@ class Simulation:
         3) if no collision present run smoothDynamics()
     """
 
-    def __init__(self, ambientSpace, dataList, configurationSpace, stepSize):
+    def __init__(self, ambientSpace, dataList, configurationSpace, stepSize, solver_method):
         self.ambientSpace = ambientSpace
         self.dataList = dataList
         self.configurationSpace = configurationSpace
 
+        self.solver_method = solver_method
         self.stepSize = stepSize
 
         # //to set when intersecting
@@ -63,7 +65,10 @@ class Simulation:
         # //using ambientSpace.acceleration will allow us to use external potentials without changing code
         # self.derive = self.deriveFunc()
 
-        self.integrator = RungeKutta(self.ambientSpace,self.stepSize)
+        if self.solver_method == "RungeKutta":
+            self.integrator = RungeKutta(self.ambientSpace,self.stepSize)
+        elif self.solver_method == "Gauss1":
+            self.integrator = Gauss1(self.ambientSpace,self.stepSize)
 
     # def deriveFunc(self, dataList):
     #     temparr = []

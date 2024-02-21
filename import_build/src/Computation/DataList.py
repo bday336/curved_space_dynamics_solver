@@ -82,6 +82,34 @@ class DataList:
                     c = [c[0] + len(self.data), c[1] + len(self.data)]
                     tempcarr.append(c)
         return DataList(tempsarr,tempcarr)
+    
+    # Euclidean norm for implicit solver methods (Only applicable for DataLists of dStates currently)
+    def norm(self):
+        val = 0.
+        for a in self.data:
+            val = a.vel[0]**2. + a.vel[1]**2. + a.vel[2]**2. + a.acc[0]**2. + a.acc[1]**2. + a.acc[2]**2.
+
+        val = np.sqrt(val)
+        return val
+    
+    def toArray(self):
+        res_array = []
+
+        # For DataList of States
+        if self.data[0].__class__.__name__ == "State":
+            for c in self.data:
+                res_array.append(c.pos.copy())
+                res_array.append(c.vel.copy())
+
+        # For DataList of dStates
+        if self.data[0].__class__.__name__ == "dState":
+            for c in self.data:
+                res_array.append(c.vel.copy())
+                res_array.append(c.acc.copy())
+
+        res_array = np.array(res_array).flatten()
+
+        return res_array
         
 
     # //implementing .add() componentwise (between datalists)
