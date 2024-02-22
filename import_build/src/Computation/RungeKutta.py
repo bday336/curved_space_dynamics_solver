@@ -48,7 +48,7 @@ class RungeKutta:
             # print(a)
             temparr.append(self.ambientSpace.acceleration(dataList.data[a].clone()))
 
-        ks,x = [100,1]
+        ks,x = [1,1]
         m = 1.
 
         # Contributions from coupling potential

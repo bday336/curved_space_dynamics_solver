@@ -65,11 +65,11 @@ def hypMetricTensor(pos):
 
 # Rotational parameterization
     sinh2alpha = np.sinh(alpha) * np.sinh(alpha)
-    sinh2beta  = np.sinh(beta) *  np.sinh(beta)
+    sin2beta   = np.sin(beta) *  np.sin(beta)
 
     g11 = 1.
     g22 = sinh2alpha
-    g33 = sinh2alpha*sinh2beta
+    g33 = sinh2alpha*sin2beta
 
     return np.array([
         [g11,0,0],
@@ -268,7 +268,77 @@ def dg2D12g1(state1, state2):
 
 # dg2D12g2 = dg1D12g1(a2, b2, g2, a1, b1, g1)
 
-# Expression to generate coupling potential terms in jacobian (i.e. second derivative of coupling potential)
+# Derivative of metric components for pairwise coupling components
+# Derivative at state1 in terms of coordinates of both vertices
+# Needed for calculation of spring term contribution
+def dMetricTerms(state1):
+    a1,b1,g1 = state1.pos.copy()
+
+# Translational parameterization
+
+    # da1g11 = 0.
+    # db1g11 = 0.
+    # dg1g11 = 0.
+    
+    # da2g11 = 0.
+    # db2g11 = 0.
+    # dg2g11 = 0.
+
+    # da1g22 = np.sinh(2. * a1)
+    # db1g22 = 0.
+    # dg1g22 = 0.
+
+    # da2g22 = 0
+    # db2g22 = 0.
+    # dg2g22 = 0.
+
+    # da1g33 = np.sinh(2. * a1) * np.cosh(b1)**2.
+    # db1g33 = np.sinh(2. * b1) * np.cosh(a1)**2.
+    # dg1g33 = 0.
+
+    # da2g33 = 0
+    # db2g33 = 0.
+    # dg2g33 = 0.
+
+# Rotational parameterization
+    
+    da1g11 = 0.
+    db1g11 = 0.
+    dg1g11 = 0.
+    
+    da2g11 = 0.
+    db2g11 = 0.
+    dg2g11 = 0.
+
+    da1g22 = np.sinh(2. * a1)
+    db1g22 = 0.
+    dg1g22 = 0.
+
+    da2g22 = 0
+    db2g22 = 0.
+    dg2g22 = 0.
+
+    da1g33 = np.sinh(2. * a1) * np.sin(b1)**2.
+    db1g33 = np.sin(2. * b1) * np.sinh(a1)**2.
+    dg1g33 = 0.
+
+    da2g33 = 0
+    db2g33 = 0.
+    dg2g33 = 0.
+
+    return np.array([
+        [da1g11,db1g11,dg1g11,da2g11,db2g11,dg2g11],
+        [da1g22,db1g22,dg1g22,da2g22,db2g22,dg2g22],
+        [da1g33,db1g33,dg1g33,da2g33,db2g33,dg2g33]
+    ])
+
+# Expression to generate coupling potential terms in jacobian
+
+# First derivative of coupling potential
+def da1V12(m, f, k, l, d12,  da1d12):
+    return k*(arccosh(d12) - l)*da1d12/(m * f * sqrt(d12**2. - 1.))
+
+# Second derivative of coupling potential
 def da2da1V12(m, f, k, l, d12, da1d12, da2d12, da2f, da2d12da1):
     # negative sign here so that the term can be added to geo terms later
     return -k/(m*f*sqrt( d12**2. - 1. ))*( (da1d12*da2d12)/sqrt( d12**2. - 1.) + ( arccosh(d12) - l )*( da2d12da1 - da1d12*(da2f/f + d12*da2d12/(d12**2. - 1.)) ) )
@@ -298,7 +368,10 @@ hypFuncDict = {
     "dg1dg1d12" : dg1D12g1,
     "dg2dg1d12" : dg2D12g1,
 
-    "coupling_derivative" : da2da1V12
+    "dmetric_terms" : dMetricTerms,
+
+    "coupling_derivative1" : da1V12,
+    "coupling_derivative2" : da2da1V12
     }
 
 

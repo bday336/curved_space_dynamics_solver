@@ -30,6 +30,10 @@ class DataList:
         Generates new DataList object consisting of states from self and dataList 
         Returns combined Datalist object
 
+    toArray()
+        Generate copy of self.data as an np.array
+        Returns flattened np.array (e.g. for DataList of States np.array([state1.pos, state1.vel, ..., stateN.pos, stateN.vel]).flatten() or for DataList of dStates np.array([state1.vel, state1.acc, ..., stateN.vel, stateN.acc]).flatten())
+
     add(dataList)
         Add velocity of each state in dataList to each state in self componentwise
         Returns self
@@ -82,15 +86,6 @@ class DataList:
                     c = [c[0] + len(self.data), c[1] + len(self.data)]
                     tempcarr.append(c)
         return DataList(tempsarr,tempcarr)
-    
-    # Euclidean norm for implicit solver methods (Only applicable for DataLists of dStates currently)
-    def norm(self):
-        val = 0.
-        for a in self.data:
-            val = a.vel[0]**2. + a.vel[1]**2. + a.vel[2]**2. + a.acc[0]**2. + a.acc[1]**2. + a.acc[2]**2.
-
-        val = np.sqrt(val)
-        return val
     
     def toArray(self):
         res_array = []

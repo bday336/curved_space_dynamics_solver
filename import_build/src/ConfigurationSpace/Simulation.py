@@ -1,6 +1,7 @@
 from src.Computation.DataList import DataList
 from src.Computation.RungeKutta import RungeKutta
 from src.Computation.Gauss1 import Gauss1
+from src.Computation.Gauss2 import Gauss2
 
 class Simulation:
     """
@@ -69,6 +70,8 @@ class Simulation:
             self.integrator = RungeKutta(self.ambientSpace,self.stepSize)
         elif self.solver_method == "Gauss1":
             self.integrator = Gauss1(self.ambientSpace,self.stepSize)
+        elif self.solver_method == "Gauss2":
+            self.integrator = Gauss2(self.ambientSpace,self.stepSize)
 
     # def deriveFunc(self, dataList):
     #     temparr = []
