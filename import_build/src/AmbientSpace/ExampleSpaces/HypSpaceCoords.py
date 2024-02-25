@@ -332,16 +332,33 @@ def dMetricTerms(state1):
         [da1g33,db1g33,dg1g33,da2g33,db2g33,dg2g33]
     ])
 
-# Expression to generate coupling potential terms in jacobian
+# Expression to generate coupling potential terms in system of odes and jacobian
 
-# First derivative of coupling potential
+# First derivative term of coupling potential
 def da1V12(m, f, k, l, d12,  da1d12):
     return k*(arccosh(d12) - l)*da1d12/(m * f * sqrt(d12**2. - 1.))
 
-# Second derivative of coupling potential
+# Second derivative term of coupling potential
 def da2da1V12(m, f, k, l, d12, da1d12, da2d12, da2f, da2d12da1):
     # negative sign here so that the term can be added to geo terms later
     return -k/(m*f*sqrt( d12**2. - 1. ))*( (da1d12*da2d12)/sqrt( d12**2. - 1.) + ( arccosh(d12) - l )*( da2d12da1 - da1d12*(da2f/f + d12*da2d12/(d12**2. - 1.)) ) )
+
+# Expression to generate rigidity constraint terms in system of odes and jacobian
+
+# Pairwise rigidity constraint
+def con12(l, d12):
+    return (arccosh(d12) - l)
+
+# Use first and second derivative functions from spring data above since constant becomes zero with derivative
+
+# First derivative term of rigidity constraint (for use in system of odes)
+def da1con12(m, f, l, d12,  da1d12):
+    return (arccosh(d12) - l)*da1d12/(m * f * sqrt(d12**2. - 1.))
+
+# Second derivative term of rigidity constraint (for use in jacobian)
+def da2da1con12(m, f, lam, l, d12, da1d12, da2d12, da2f, da2d12da1):
+    # negative sign here so that the term can be added to geo terms later
+    return -lam/(m*f*sqrt( d12**2. - 1. ))*( (da1d12*da2d12)/sqrt( d12**2. - 1.) + ( arccosh(d12) - l )*( da2d12da1 - da1d12*(da2f/f + d12*da2d12/(d12**2. - 1.)) ) )
 
 
 hypFuncDict = {
@@ -371,7 +388,12 @@ hypFuncDict = {
     "dmetric_terms" : dMetricTerms,
 
     "coupling_derivative1" : da1V12,
-    "coupling_derivative2" : da2da1V12
+    "coupling_derivative2" : da2da1V12,
+
+    "rig_con" : con12,
+
+    "rig_con_derivative1" : da1con12,
+    "rig_con_derivative2" : da2da1con12
     }
 
 

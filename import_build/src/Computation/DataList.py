@@ -60,6 +60,7 @@ class DataList:
         # data is list of State objects (describing motion of vertices)
         self.data = data
         self.connectivity = connectivity
+        # self.rig_connectivity = rig_connectivity
 
         # //implementation of .clone() for the array
     def clone(self):

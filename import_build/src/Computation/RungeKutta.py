@@ -40,6 +40,10 @@ class RungeKutta:
         self.ambientSpace = ambientSpace
         self.stepSize = stepSize
 
+        self.ks = 1.
+        self.x = 1.
+        self.m = 1.
+
     def deriveFunc(self, dataList):
         temparr = []
 
@@ -48,8 +52,8 @@ class RungeKutta:
             # print(a)
             temparr.append(self.ambientSpace.acceleration(dataList.data[a].clone()))
 
-        ks,x = [1,1]
-        m = 1.
+        # ks,x = [1,1]
+        # m = 1.
 
         # Contributions from coupling potential
         if len(dataList.connectivity) != 0:
@@ -70,12 +74,19 @@ class RungeKutta:
                 a1,b1,g1 = dataList.data[b[0]].pos.copy()
                 a2,b2,g2 = dataList.data[b[1]].pos.copy()
 
-                spa1 = (ks*(arccosh(d12) - x)*da1d12)/(m*sqrt(d12**2. - 1.))
-                spb1 = (ks*(arccosh(d12) - x)*db1d12)/(m*sinh(a1)**2. * sqrt(d12**2. - 1.))
-                spg1 = (ks*(arccosh(d12) - x)*dg1d12)/(m*sinh(a1)**2. * sin(b1)**2. * sqrt(d12**2. - 1.))
-                spa2 = (ks*(arccosh(d12) - x)*da2d12)/(m*sqrt(d12**2. - 1.))
-                spb2 = (ks*(arccosh(d12) - x)*db2d12)/(m*sinh(a2)**2. * sqrt(d12**2. - 1.))
-                spg2 = (ks*(arccosh(d12) - x)*dg2d12)/(m*sinh(a2)**2. * sin(b2)**2. * sqrt(d12**2. - 1.))
+                spa1 = self.ambientSpace.geometry.funcDict["coupling_derivative1"](self.m, self.ambientSpace.geometry.metricTensor(dataList.data[b[0]].pos)[0,0], self.ks, self.x, d12,  da1d12)
+                spb1 = self.ambientSpace.geometry.funcDict["coupling_derivative1"](self.m, self.ambientSpace.geometry.metricTensor(dataList.data[b[0]].pos)[1,1], self.ks, self.x, d12,  db1d12)
+                spg1 = self.ambientSpace.geometry.funcDict["coupling_derivative1"](self.m, self.ambientSpace.geometry.metricTensor(dataList.data[b[0]].pos)[2,2], self.ks, self.x, d12,  dg1d12)
+                spa2 = self.ambientSpace.geometry.funcDict["coupling_derivative1"](self.m, self.ambientSpace.geometry.metricTensor(dataList.data[b[1]].pos)[0,0], self.ks, self.x, d12,  da2d12)
+                spb2 = self.ambientSpace.geometry.funcDict["coupling_derivative1"](self.m, self.ambientSpace.geometry.metricTensor(dataList.data[b[1]].pos)[1,1], self.ks, self.x, d12,  db2d12)
+                spg2 = self.ambientSpace.geometry.funcDict["coupling_derivative1"](self.m, self.ambientSpace.geometry.metricTensor(dataList.data[b[1]].pos)[2,2], self.ks, self.x, d12,  dg2d12)
+
+                # spa1 = (ks*(arccosh(d12) - x)*da1d12)/(m*sqrt(d12**2. - 1.))
+                # spb1 = (ks*(arccosh(d12) - x)*db1d12)/(m*sinh(a1)**2. * sqrt(d12**2. - 1.))
+                # spg1 = (ks*(arccosh(d12) - x)*dg1d12)/(m*sinh(a1)**2. * sin(b1)**2. * sqrt(d12**2. - 1.))
+                # spa2 = (ks*(arccosh(d12) - x)*da2d12)/(m*sqrt(d12**2. - 1.))
+                # spb2 = (ks*(arccosh(d12) - x)*db2d12)/(m*sinh(a2)**2. * sqrt(d12**2. - 1.))
+                # spg2 = (ks*(arccosh(d12) - x)*dg2d12)/(m*sinh(a2)**2. * sin(b2)**2. * sqrt(d12**2. - 1.))
 
                 spdStates = [dState(zeros(3),array([spa1,spb1,spg1])), dState(zeros(3),array([spa2,spb2,spg2]))]
 

@@ -12,9 +12,9 @@ from src.Computation.dState import dState
 
 # //implementing the Rk4 Scheme for arbitrary classes that have clone add and multiplyScalar
 # //will use this possibly on individual states, or on entire DataLists!
-class Gauss2:
+class Radau2:
     """
-    A class used to perform numerical integration via Implicit 2-stage Gauss method (GS2)
+    A class used to perform numerical integration via Implicit 2-stage Radau method (RS2)
 
     ...
 
@@ -37,15 +37,15 @@ class Gauss2:
         Returns DataList of dStates
 
     dynjac(dataList)
-        Generates jacobian matrix for solving the system of odes for simulation system with 2-step Gauss collocation
+        Generates jacobian matrix for solving the system of odes for simulation system with 2-step Radau collocation
         Returns jacobian matrix (np.array)
 
     difffunc(dataList, k1, k2)
-        Generates np.array of residuals of odes for simulation system with 1-step Gauss collocation using DataList objects dataList (initial condition for integration step), k1 (data at stage 1 of Gauss collocation), and k2 (data at stage 2 of Gauss collocation)
+        Generates np.array of residuals of odes for simulation system with 1-step Radau collocation using DataList objects dataList (initial condition for integration step), k1 (data at stage 1 of Radau collocation), and k2 (data at stage 2 of Radau collocation)
         Returns np.array
 
     step(dataList)
-        Perform one integration step via the GS2 algorithm on system described by dataList
+        Perform one integration step via the RS2 algorithm on system described by dataList
         Returns updated clone of dataList
     """
 
@@ -327,8 +327,8 @@ class Gauss2:
 
     def difffunc(self, dataList, k1, k2):
         # Set to run Gauss 2-stage method
-        a11,a12 = [1./4., 1./4. - np.sqrt(3.)/6.]
-        a21,a22 = [1./4. + np.sqrt(3.)/6., 1./4.]
+        a11,a12 = [5./12., -1./12.]
+        a21,a22 = [3./4., 1./4.]
 
         return np.array([
             k1.toArray() - self.dynfunc(self.arrayToDataList(dataList.toArray() + (a11*k1.toArray() + a12*k2.toArray())*self.stepSize, dataList)).toArray(),
@@ -337,14 +337,14 @@ class Gauss2:
 
     def step(self, dataList, tol = 1e-15, imax = 100):
         # Set to run Gauss 2-stage method
-        a11,a12 = [1./4., 1./4. - np.sqrt(3.)/6.]
-        a21,a22 = [1./4. + np.sqrt(3.)/6., 1./4.]
-        bs1,bs2 = [1./2., 1./2.]
+        a11,a12 = [5./12., -1./12.]
+        a21,a22 = [3./4., 1./4.]
+        bs1,bs2 = [3./4., 1./4.]
 
         # Initial Guess - Explicit Euler
         k = self.dynfunc(dataList)
-        x1guess = dataList.toArray() + (1./2. - np.sqrt(3.)/6.)*self.stepSize*k.toArray()
-        x2guess = dataList.toArray() + (1./2. + np.sqrt(3.)/6.)*self.stepSize*k.toArray()
+        x1guess = dataList.toArray() + (1./3.)*self.stepSize*k.toArray()
+        x2guess = dataList.toArray() + (1.)*self.stepSize*k.toArray()
         k1 = self.dynfunc(self.arrayToDataList(x1guess, dataList))
         k2 = self.dynfunc(self.arrayToDataList(x2guess, dataList))
 

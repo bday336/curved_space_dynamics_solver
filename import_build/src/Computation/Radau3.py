@@ -12,9 +12,9 @@ from src.Computation.dState import dState
 
 # //implementing the Rk4 Scheme for arbitrary classes that have clone add and multiplyScalar
 # //will use this possibly on individual states, or on entire DataLists!
-class Gauss2:
+class Radau3:
     """
-    A class used to perform numerical integration via Implicit 2-stage Gauss method (GS2)
+    A class used to perform numerical integration via Implicit 3-stage Radau method (RS3)
 
     ...
 
@@ -37,15 +37,15 @@ class Gauss2:
         Returns DataList of dStates
 
     dynjac(dataList)
-        Generates jacobian matrix for solving the system of odes for simulation system with 2-step Gauss collocation
+        Generates jacobian matrix for solving the system of odes for simulation system with 3-step Radau collocation
         Returns jacobian matrix (np.array)
 
-    difffunc(dataList, k1, k2)
-        Generates np.array of residuals of odes for simulation system with 1-step Gauss collocation using DataList objects dataList (initial condition for integration step), k1 (data at stage 1 of Gauss collocation), and k2 (data at stage 2 of Gauss collocation)
+    difffunc(dataList, k1, k2, k3)
+        Generates np.array of residuals of odes for simulation system with 1-step Radau collocation using DataList objects dataList (initial condition for integration step), k1 (data at stage 1 of Radau collocation), k2 (data at stage 2 of Radau collocation), and k3 (data at stage 3 of Radau collocation)
         Returns np.array
 
     step(dataList)
-        Perform one integration step via the GS2 algorithm on system described by dataList
+        Perform one integration step via the RS3 algorithm on system described by dataList
         Returns updated clone of dataList
     """
 
@@ -325,52 +325,62 @@ class Gauss2:
         # fullj = np.eye(2*ambient_dim*vert_num) - jacobian
         return jacobian
 
-    def difffunc(self, dataList, k1, k2):
-        # Set to run Gauss 2-stage method
-        a11,a12 = [1./4., 1./4. - np.sqrt(3.)/6.]
-        a21,a22 = [1./4. + np.sqrt(3.)/6., 1./4.]
+    def difffunc(self, dataList, k1, k2, k3):
+        root6 = np.sqrt(6.)
+        # Set to run RadauIIA 3-stage method
+        a11,a12,a13 = [(88.-7.*root6)/360., (296.-169.*root6)/1800., (-2.+3.*root6)/225.]
+        a21,a22,a23 = [(296.+169.*root6)/1800., (88.+7.*root6)/360., (-2.-3.*root6)/225.]
+        a31,a32,a33 = [(16.-root6)/36., (16.+root6)/36., 1./9.]
 
         return np.array([
-            k1.toArray() - self.dynfunc(self.arrayToDataList(dataList.toArray() + (a11*k1.toArray() + a12*k2.toArray())*self.stepSize, dataList)).toArray(),
-            k2.toArray() - self.dynfunc(self.arrayToDataList(dataList.toArray() + (a21*k1.toArray() + a22*k2.toArray())*self.stepSize, dataList)).toArray()
+            k1.toArray() - self.dynfunc(self.arrayToDataList(dataList.toArray() + (a11*k1.toArray() + a12*k2.toArray() + a13*k3.toArray())*self.stepSize, dataList)).toArray(),
+            k2.toArray() - self.dynfunc(self.arrayToDataList(dataList.toArray() + (a21*k1.toArray() + a22*k2.toArray() + a23*k3.toArray())*self.stepSize, dataList)).toArray(),
+            k3.toArray() - self.dynfunc(self.arrayToDataList(dataList.toArray() + (a31*k1.toArray() + a32*k2.toArray() + a33*k3.toArray())*self.stepSize, dataList)).toArray()
         ]).flatten()
 
     def step(self, dataList, tol = 1e-15, imax = 100):
-        # Set to run Gauss 2-stage method
-        a11,a12 = [1./4., 1./4. - np.sqrt(3.)/6.]
-        a21,a22 = [1./4. + np.sqrt(3.)/6., 1./4.]
-        bs1,bs2 = [1./2., 1./2.]
+        root6 = np.sqrt(6.)
+        # Set to run RadauIIA 3-stage method
+        a11,a12,a13 = [(88.-7.*root6)/360., (296.-169.*root6)/1800., (-2.+3.*root6)/225.]
+        a21,a22,a23 = [(296.+169.*root6)/1800., (88.+7.*root6)/360., (-2.-3.*root6)/225.]
+        a31,a32,a33 = [(16.-root6)/36., (16.+root6)/36., 1./9.]
+        bs1,bs2,bs3 = [(16.-root6)/36., (16.+root6)/36., 1./9.]
 
         # Initial Guess - Explicit Euler
         k = self.dynfunc(dataList)
-        x1guess = dataList.toArray() + (1./2. - np.sqrt(3.)/6.)*self.stepSize*k.toArray()
-        x2guess = dataList.toArray() + (1./2. + np.sqrt(3.)/6.)*self.stepSize*k.toArray()
+        x1guess = dataList.toArray() + ((4.-root6)/10.)*self.stepSize*k.toArray()
+        x2guess = dataList.toArray() + ((4.+root6)/10.)*self.stepSize*k.toArray()
+        x3guess = dataList.toArray() + (1.)*self.stepSize*k.toArray()
         k1 = self.dynfunc(self.arrayToDataList(x1guess, dataList))
         k2 = self.dynfunc(self.arrayToDataList(x2guess, dataList))
+        k3 = self.dynfunc(self.arrayToDataList(x3guess, dataList))
 
         # Check Error Before iterations
-        er = self.difffunc(dataList, k1, k2)
+        er = self.difffunc(dataList, k1, k2, k3)
 
         # Begin Iterations
         for a in range(imax):
             if np.linalg.norm(er) >= tol:
-                j1 = self.dynjac(self.arrayToDataList(dataList.toArray() + (a11*k1.toArray() + a12*k2.toArray())*self.stepSize, dataList))
-                j2 = self.dynjac(self.arrayToDataList(dataList.toArray() + (a21*k1.toArray() + a22*k2.toArray())*self.stepSize, dataList))
+                j1 = self.dynjac(self.arrayToDataList(dataList.toArray() + (a11*k1.toArray() + a12*k2.toArray() + a13*k3.toArray())*self.stepSize, dataList))
+                j2 = self.dynjac(self.arrayToDataList(dataList.toArray() + (a21*k1.toArray() + a22*k2.toArray() + a23*k3.toArray())*self.stepSize, dataList))
+                j3 = self.dynjac(self.arrayToDataList(dataList.toArray() + (a31*k1.toArray() + a32*k2.toArray() + a33*k3.toArray())*self.stepSize, dataList))
                 
                 fullj = np.block([
-                    [np.eye(j1.shape[0]) - self.stepSize*a11*j1, -self.stepSize*a12*j1],
-                    [-self.stepSize*a21*j2, np.eye(j2.shape[0]) - self.stepSize*a22*j2]
+                    [np.eye(j1.shape[0]) - self.stepSize*a11*j1, -self.stepSize*a12*j1, -self.stepSize*a13*j1],
+                    [-self.stepSize*a21*j2, np.eye(j2.shape[0]) - self.stepSize*a22*j2, -self.stepSize*a23*j2],
+                    [-self.stepSize*a31*j3, -self.stepSize*a32*j3, np.eye(j3.shape[0]) - self.stepSize*a33*j3]
                 ])
 
                 linsolve = np.linalg.solve(fullj,-er)
 
-                k1 = self.arrayToDataList(k1.toArray() + linsolve[0:j1.shape[0]],dataList)
-                k2 = self.arrayToDataList(k2.toArray() + linsolve[j2.shape[0]:2*j2.shape[0]],dataList)
+                k1 = self.arrayToDataList(k1.toArray() + linsolve[0*j1.shape[0]:1*j1.shape[0]],dataList)
+                k2 = self.arrayToDataList(k2.toArray() + linsolve[1*j2.shape[0]:2*j2.shape[0]],dataList)
+                k3 = self.arrayToDataList(k3.toArray() + linsolve[2*j3.shape[0]:3*j3.shape[0]],dataList)
 
-                er = self.difffunc(dataList, k1, k2)
+                er = self.difffunc(dataList, k1, k2, k3)
             else:
                 break
 
 
-        newarr = dataList.toArray() + self.stepSize*(bs1*k1.toArray() + bs2*k2.toArray())
+        newarr = dataList.toArray() + self.stepSize*(bs1*k1.toArray() + bs2*k2.toArray() + bs3*k3.toArray())
         return self.arrayToDataList(newarr, dataList)

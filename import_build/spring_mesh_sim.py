@@ -82,7 +82,7 @@ dt = 0.001
 tmaxNum = 10000
 
 # //make the simulation
-sim = Simulation( ambientSpace, sim_system, configurationSpace, dt , "Gauss2")
+sim = Simulation( ambientSpace, sim_system, configurationSpace, dt , "Radau3")
 
 for c in range(tmaxNum):
     sim.step()
@@ -377,4 +377,4 @@ rc('animation', html='html5')
 # have changed.
 anim = animation.FuncAnimation(fig, animate,frames=frames, interval=50)
 
-anim.save('./h3springmeshgs2test.mov', writer='imagemagick')
+anim.save('./h3springmeshrs3newtest.mov', writer='imagemagick')

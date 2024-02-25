@@ -12,9 +12,9 @@ from src.Computation.dState import dState
 
 # //implementing the Rk4 Scheme for arbitrary classes that have clone add and multiplyScalar
 # //will use this possibly on individual states, or on entire DataLists!
-class Gauss2:
+class Gauss3:
     """
-    A class used to perform numerical integration via Implicit 2-stage Gauss method (GS2)
+    A class used to perform numerical integration via Implicit 3-stage Gauss method (GS3)
 
     ...
 
@@ -37,15 +37,15 @@ class Gauss2:
         Returns DataList of dStates
 
     dynjac(dataList)
-        Generates jacobian matrix for solving the system of odes for simulation system with 2-step Gauss collocation
+        Generates jacobian matrix for solving the system of odes for simulation system with 3-step Gauss collocation
         Returns jacobian matrix (np.array)
 
-    difffuncgauss1s(dataList, k1, k2)
-        Generates np.array of residuals of odes for simulation system with 1-step Gauss collocation using DataList objects dataList (initial condition for integration step), k1 (data at stage 1 of Gauss collocation), and k2 (data at stage 2 of Gauss collocation)
+    difffunc(dataList, k1, k2, k3)
+        Generates np.array of residuals of odes for simulation system with 1-step Gauss collocation using DataList objects dataList (initial condition for integration step), k1 (data at stage 1 of Gauss collocation), k2 (data at stage 2 of Gauss collocation), and k3 (data at stage 3 of Gauss collocation)
         Returns np.array
 
     step(dataList)
-        Perform one integration step via the GS2 algorithm on system described by dataList
+        Perform one integration step via the GS3 algorithm on system described by dataList
         Returns updated clone of dataList
     """
 
@@ -99,12 +99,20 @@ class Gauss2:
                 a1,b1,g1 = dataList.data[b[0]].pos.copy()
                 a2,b2,g2 = dataList.data[b[1]].pos.copy()
 
-                spa1 = (self.ks*(arccosh(d12) - self.x)*da1d12)/(self.m*sqrt(d12**2. - 1.))
-                spb1 = (self.ks*(arccosh(d12) - self.x)*db1d12)/(self.m*sinh(a1)**2. * sqrt(d12**2. - 1.))
-                spg1 = (self.ks*(arccosh(d12) - self.x)*dg1d12)/(self.m*sinh(a1)**2. * sin(b1)**2. * sqrt(d12**2. - 1.))
-                spa2 = (self.ks*(arccosh(d12) - self.x)*da2d12)/(self.m*sqrt(d12**2. - 1.))
-                spb2 = (self.ks*(arccosh(d12) - self.x)*db2d12)/(self.m*sinh(a2)**2. * sqrt(d12**2. - 1.))
-                spg2 = (self.ks*(arccosh(d12) - self.x)*dg2d12)/(self.m*sinh(a2)**2. * sin(b2)**2. * sqrt(d12**2. - 1.))
+                spa1 = self.ambientSpace.geometry.funcDict["coupling_derivative1"](self.m, self.ambientSpace.geometry.metricTensor(dataList.data[b[0]].pos)[0,0], self.ks, self.x, d12,  da1d12)
+                spb1 = self.ambientSpace.geometry.funcDict["coupling_derivative1"](self.m, self.ambientSpace.geometry.metricTensor(dataList.data[b[0]].pos)[1,1], self.ks, self.x, d12,  db1d12)
+                spg1 = self.ambientSpace.geometry.funcDict["coupling_derivative1"](self.m, self.ambientSpace.geometry.metricTensor(dataList.data[b[0]].pos)[2,2], self.ks, self.x, d12,  dg1d12)
+                spa2 = self.ambientSpace.geometry.funcDict["coupling_derivative1"](self.m, self.ambientSpace.geometry.metricTensor(dataList.data[b[1]].pos)[0,0], self.ks, self.x, d12,  da2d12)
+                spb2 = self.ambientSpace.geometry.funcDict["coupling_derivative1"](self.m, self.ambientSpace.geometry.metricTensor(dataList.data[b[1]].pos)[1,1], self.ks, self.x, d12,  db2d12)
+                spg2 = self.ambientSpace.geometry.funcDict["coupling_derivative1"](self.m, self.ambientSpace.geometry.metricTensor(dataList.data[b[1]].pos)[2,2], self.ks, self.x, d12,  dg2d12)
+
+
+                # spa1 = (self.ks*(arccosh(d12) - self.x)*da1d12)/(self.m*sqrt(d12**2. - 1.))
+                # spb1 = (self.ks*(arccosh(d12) - self.x)*db1d12)/(self.m*sinh(a1)**2. * sqrt(d12**2. - 1.))
+                # spg1 = (self.ks*(arccosh(d12) - self.x)*dg1d12)/(self.m*sinh(a1)**2. * sin(b1)**2. * sqrt(d12**2. - 1.))
+                # spa2 = (self.ks*(arccosh(d12) - self.x)*da2d12)/(self.m*sqrt(d12**2. - 1.))
+                # spb2 = (self.ks*(arccosh(d12) - self.x)*db2d12)/(self.m*sinh(a2)**2. * sqrt(d12**2. - 1.))
+                # spg2 = (self.ks*(arccosh(d12) - self.x)*dg2d12)/(self.m*sinh(a2)**2. * sin(b2)**2. * sqrt(d12**2. - 1.))
 
                 spdStates = [dState(zeros(3),array([spa1,spb1,spg1])), dState(zeros(3),array([spa2,spb2,spg2]))]
 
@@ -317,52 +325,60 @@ class Gauss2:
         # fullj = np.eye(2*ambient_dim*vert_num) - jacobian
         return jacobian
 
-    def difffunc(self, dataList, k1, k2):
-        # Set to run Gauss 2-stage method
-        a11,a12 = [1./4., 1./4. - np.sqrt(3.)/6.]
-        a21,a22 = [1./4. + np.sqrt(3.)/6., 1./4.]
+    def difffunc(self, dataList, k1, k2, k3):
+        # Set to run Gauss 3-stage method
+        a11,a12,a13 = [5./36., 2./9. - np.sqrt(15.)/15., 5./36. - np.sqrt(15.)/30.]
+        a21,a22,a23 = [5./36. + np.sqrt(15.)/24., 2./9., 5./36. - np.sqrt(15.)/24.]
+        a31,a32,a33 = [5./36. + np.sqrt(15.)/30., 2./9. + np.sqrt(15.)/15., 5./36.]
 
         return np.array([
-            k1.toArray() - self.dynfunc(self.arrayToDataList(dataList.toArray() + (a11*k1.toArray() + a12*k2.toArray())*self.stepSize, dataList)).toArray(),
-            k2.toArray() - self.dynfunc(self.arrayToDataList(dataList.toArray() + (a21*k1.toArray() + a22*k2.toArray())*self.stepSize, dataList)).toArray()
+            k1.toArray() - self.dynfunc(self.arrayToDataList(dataList.toArray() + (a11*k1.toArray() + a12*k2.toArray() + a13*k3.toArray())*self.stepSize, dataList)).toArray(),
+            k2.toArray() - self.dynfunc(self.arrayToDataList(dataList.toArray() + (a21*k1.toArray() + a22*k2.toArray() + a23*k3.toArray())*self.stepSize, dataList)).toArray(),
+            k3.toArray() - self.dynfunc(self.arrayToDataList(dataList.toArray() + (a31*k1.toArray() + a32*k2.toArray() + a33*k3.toArray())*self.stepSize, dataList)).toArray()
         ]).flatten()
 
     def step(self, dataList, tol = 1e-15, imax = 100):
-        # Set to run Gauss 2-stage method
-        a11,a12 = [1./4., 1./4. - np.sqrt(3.)/6.]
-        a21,a22 = [1./4. + np.sqrt(3.)/6., 1./4.]
-        bs1,bs2 = [1./2., 1./2.]
+        # Set to run Gauss 3-stage method
+        a11,a12,a13 = [5./36., 2./9. - np.sqrt(15.)/15., 5./36. - np.sqrt(15.)/30.]
+        a21,a22,a23 = [5./36. + np.sqrt(15.)/24., 2./9., 5./36. - np.sqrt(15.)/24.]
+        a31,a32,a33 = [5./36. + np.sqrt(15.)/30., 2./9. + np.sqrt(15.)/15., 5./36.]
+        bs1,bs2,bs3 = [5./18., 4./9., 5./18.]
 
         # Initial Guess - Explicit Euler
         k = self.dynfunc(dataList)
-        x1guess = dataList.toArray() + (1./2. - np.sqrt(3.)/6.)*self.stepSize*k.toArray()
-        x2guess = dataList.toArray() + (1./2. + np.sqrt(3.)/6.)*self.stepSize*k.toArray()
+        x1guess = dataList.toArray() + (1./2. - np.sqrt(15.)/10.)*self.stepSize*k.toArray()
+        x2guess = dataList.toArray() + (1./2.)*self.stepSize*k.toArray()
+        x3guess = dataList.toArray() + (1./2. + np.sqrt(15.)/10.)*self.stepSize*k.toArray()
         k1 = self.dynfunc(self.arrayToDataList(x1guess, dataList))
         k2 = self.dynfunc(self.arrayToDataList(x2guess, dataList))
+        k3 = self.dynfunc(self.arrayToDataList(x3guess, dataList))
 
         # Check Error Before iterations
-        er = self.difffunc(dataList, k1, k2)
+        er = self.difffunc(dataList, k1, k2, k3)
 
         # Begin Iterations
         for a in range(imax):
             if np.linalg.norm(er) >= tol:
-                j1 = self.dynjac(self.arrayToDataList(dataList.toArray() + (a11*k1.toArray() + a12*k2.toArray())*self.stepSize, dataList))
-                j2 = self.dynjac(self.arrayToDataList(dataList.toArray() + (a21*k1.toArray() + a22*k2.toArray())*self.stepSize, dataList))
+                j1 = self.dynjac(self.arrayToDataList(dataList.toArray() + (a11*k1.toArray() + a12*k2.toArray() + a13*k3.toArray())*self.stepSize, dataList))
+                j2 = self.dynjac(self.arrayToDataList(dataList.toArray() + (a21*k1.toArray() + a22*k2.toArray() + a23*k3.toArray())*self.stepSize, dataList))
+                j3 = self.dynjac(self.arrayToDataList(dataList.toArray() + (a31*k1.toArray() + a32*k2.toArray() + a33*k3.toArray())*self.stepSize, dataList))
                 
                 fullj = np.block([
-                    [np.eye(j1.shape[0]) - self.stepSize*a11*j1, -self.stepSize*a12*j1],
-                    [-self.stepSize*a21*j2, np.eye(j2.shape[0]) - self.stepSize*a22*j2]
+                    [np.eye(j1.shape[0]) - self.stepSize*a11*j1, -self.stepSize*a12*j1, -self.stepSize*a13*j1],
+                    [-self.stepSize*a21*j2, np.eye(j2.shape[0]) - self.stepSize*a22*j2, -self.stepSize*a23*j2],
+                    [-self.stepSize*a31*j3, -self.stepSize*a32*j3, np.eye(j3.shape[0]) - self.stepSize*a33*j3]
                 ])
 
                 linsolve = np.linalg.solve(fullj,-er)
 
-                k1 = self.arrayToDataList(k1.toArray() + linsolve[0:j1.shape[0]],dataList)
-                k2 = self.arrayToDataList(k2.toArray() + linsolve[j2.shape[0]:2*j2.shape[0]],dataList)
+                k1 = self.arrayToDataList(k1.toArray() + linsolve[0*j1.shape[0]:1*j1.shape[0]],dataList)
+                k2 = self.arrayToDataList(k2.toArray() + linsolve[1*j2.shape[0]:2*j2.shape[0]],dataList)
+                k3 = self.arrayToDataList(k3.toArray() + linsolve[2*j3.shape[0]:3*j3.shape[0]],dataList)
 
-                er = self.difffunc(dataList, k1, k2)
+                er = self.difffunc(dataList, k1, k2, k3)
             else:
                 break
 
 
-        newarr = dataList.toArray() + self.stepSize*(bs1*k1.toArray() + bs2*k2.toArray())
+        newarr = dataList.toArray() + self.stepSize*(bs1*k1.toArray() + bs2*k2.toArray() + bs3*k3.toArray())
         return self.arrayToDataList(newarr, dataList)
