@@ -174,6 +174,11 @@ def D12(state1, state2):
     return np.cosh(a1)*np.cosh(a2) - np.sinh(a1)*np.cos(b1)*np.sinh(a2)*np.cos(b2) - np.sinh(a1)*np.sin(b1)*np.sinh(a2)*np.sin(b2)*np.cos(g1 - g2)
 
 # First Derivatives of distance function
+def dtD12(dstate1, dstate2, dterms):
+    da1,db1,dg1 = dstate1.vel.copy()
+    da2,db2,dg2 = dstate2.vel.copy()
+    return (np.array([da1,db1,dg1,da2,db2,dg2]) @ np.array(dterms))
+
 def da1D12(state1, state2):
     a1,b1,g1 = state1.pos.copy()
     a2,b2,g2 = state2.pos.copy()
@@ -194,6 +199,13 @@ def dg1D12(state1, state2):
 # dg2D12 = dg1D12(state2, state1)
 
 # Second Derivatives of distance function (Only needed for implicit methods for jacobian construction)
+def ddtD12(dstate1, dstate2, dterms, ddterms):
+    da1,db1,dg1 = dstate1.vel.copy()
+    da2,db2,dg2 = dstate2.vel.copy()
+    dda1,ddb1,ddg1 = dstate1.acc.copy()
+    dda2,ddb2,ddg2 = dstate2.acc.copy()
+    return (np.array([dda1,ddb1,ddg1,dda2,ddb2,ddg2]) @ np.array(dterms) + np.array([da1,db1,dg1,da2,db2,dg2]) @ np.array(ddterms) @ np.array([da1,db1,dg1,da2,db2,dg2]))
+
 def da1D12a1(state1, state2):
     a1,b1,g1 = state1.pos.copy()
     a2,b2,g2 = state2.pos.copy()
@@ -349,16 +361,39 @@ def da2da1V12(m, f, k, l, d12, da1d12, da2d12, da2f, da2d12da1):
 def con12(l, d12):
     return (arccosh(d12) - l)
 
+def dtcon12(l, d12,  dtd12):
+    return dtd12/(sqrt(d12**2. - 1.))
+
+def ddtcon12(l, d12,  dtd12, dttd12):
+    return 1./(sqrt(d12**2. - 1.)) * (dttd12 - d12*dtd12**2./(d12**2. - 1.))
+
 # Use first and second derivative functions from spring data above since constant becomes zero with derivative
 
 # First derivative term of rigidity constraint (for use in system of odes)
-def da1con12(m, f, l, d12,  da1d12):
-    return (arccosh(d12) - l)*da1d12/(m * f * sqrt(d12**2. - 1.))
+def da1con12(m, f, lam, d12,  da1d12):
+    return lam*da1d12/(m * f * sqrt(d12**2. - 1.))
+
+# First derivative of velocity constriant for jacobian
+def da1dtcon12array(dstate1, dstate2, da1dterms):
+    # Replace dterms with da1dterms - i.e. derivative of dterms with respect to da1 typically given by the hessian
+    da1,db1,dg1 = dstate1.vel.copy()
+    da2,db2,dg2 = dstate2.vel.copy()
+    return (np.array([da1,db1,dg1,da2,db2,dg2]) @ np.array(da1dterms))
+
+# First derivative of acceleration constraint for jacobian (WRONG need to consider derivative of dda1 terms...)
+def da1ddtcon12(dstate1, dstate2, dterms, da1ddterms):
+    da1,db1,dg1 = dstate1.vel.copy()
+    da2,db2,dg2 = dstate2.vel.copy()
+    dda1,ddb1,ddg1 = dstate1.acc.copy()
+    dda2,ddb2,ddg2 = dstate2.acc.copy()
+    return (np.array([dda1,ddb1,ddg1,dda2,ddb2,ddg2]) @ np.array(dterms) + np.array([da1,db1,dg1,da2,db2,dg2]) @ np.array(da1ddterms) @ np.array([da1,db1,dg1,da2,db2,dg2]))
+
 
 # Second derivative term of rigidity constraint (for use in jacobian)
-def da2da1con12(m, f, lam, l, d12, da1d12, da2d12, da2f, da2d12da1):
+def da2da1con12(m, f, lam, d12, da1d12, da2d12, da2f, da2d12da1):
     # negative sign here so that the term can be added to geo terms later
-    return -lam/(m*f*sqrt( d12**2. - 1. ))*( (da1d12*da2d12)/sqrt( d12**2. - 1.) + ( arccosh(d12) - l )*( da2d12da1 - da1d12*(da2f/f + d12*da2d12/(d12**2. - 1.)) ) )
+    return -lam/(m*f*sqrt( d12**2. - 1. ))*( (da1d12*da2d12)/(d12**2. - 1.) + da1d12*da2f/f - da2d12da1 )
+
 
 
 hypFuncDict = {
@@ -366,9 +401,13 @@ hypFuncDict = {
 
     "d12"    : D12,
 
+    "dtd12"  : dtD12,
+
     "da1d12" : da1D12,
     "db1d12" : db1D12,
     "dg1d12" : dg1D12,
+
+    "ddtd12"  : ddtD12,
 
     "da1da1d12" : da1D12a1,
     "db1da1d12" : db1D12a1,
@@ -392,8 +431,13 @@ hypFuncDict = {
 
     "rig_con" : con12,
 
+    "rig_con_tderivative1" : dtcon12,
+    "rig_con_tderivative2" : ddtcon12,
+
     "rig_con_derivative1" : da1con12,
-    "rig_con_derivative2" : da2da1con12
+    "rig_con_derivative2" : da2da1con12,
+
+    "rig_dtcon_derivative1_array" : da1dtcon12array
     }
 
 

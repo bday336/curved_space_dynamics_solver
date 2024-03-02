@@ -17,8 +17,13 @@ class DataList:
         array of state objects (vertices)
 
     connectivity : array
-        array of connectivity information between states in data - defaults to None i.e. data is collection of free vertices
-        (e.g. connectivity = [[1,0],[3,8]] means states 0 and 1 are connected and states 3 and 8 are connected via coupling potential or constraint)
+        array of connectivity information between states in data specific to coupling potential - defaults to None i.e. data is collection of free vertices
+        (e.g. connectivity = [[1,0],[3,8]] means states 0 and 1 are connected and states 3 and 8 are connected via coupling potential)
+
+    rig_connectivity : array
+        array of connectivity information between states in data specific to rigid constraints - defaults to None i.e. data is collection of free vertices
+        (e.g. rig_connectivity = [[1,0,lam1],[3,8,lam2]] means states 0 and 1 are connected and states 3 and 8 
+        are connected via rig constraint with lagrange multiplers lam1 and lam2, respectively)
 
     Methods
     -------
@@ -56,22 +61,23 @@ class DataList:
     """
 
     # Populate list with states
-    def __init__(self, data, connectivity = []):
+    def __init__(self, data, connectivity = [], rig_connectivity = []):
         # data is list of State objects (describing motion of vertices)
         self.data = data
         self.connectivity = connectivity
-        # self.rig_connectivity = rig_connectivity
+        self.rig_connectivity = rig_connectivity
 
         # //implementation of .clone() for the array
     def clone(self):
         temparr = []
         for a in self.data:
             temparr.append(a.clone())
-        return  DataList(temparr, self.connectivity)
+        return  DataList(temparr, self.connectivity, self.rig_connectivity)
     
     def combine(self, dataList):
         tempsarr = []
         tempcarr = []
+        temprarr = []
 
         # Combine state data
         for a in self.data:
@@ -86,7 +92,15 @@ class DataList:
                 for c in dataList.connectivity:
                     c = [c[0] + len(self.data), c[1] + len(self.data)]
                     tempcarr.append(c)
-        return DataList(tempsarr,tempcarr)
+
+        # Combine rig_connectivity data
+        if len(self.rig_connectivity) != 0:
+            temprarr = temprarr + self.rig_connectivity
+        if len(dataList.rig_connectivity) != 0:
+                for c in dataList.rig_connectivity:
+                    c = [c[0] + len(self.data), c[1] + len(self.data), c[2]]
+                    temprarr.append(c)
+        return DataList(tempsarr,tempcarr,temprarr)
     
     def toArray(self):
         res_array = []

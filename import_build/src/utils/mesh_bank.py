@@ -22,12 +22,15 @@ def particle_mesh(position, velocity):
 # Defualt orientation has both on the y-axis with
 # the center at the origin. The rest length of spring
 # is taken as the argument.
-def dumbbell_mesh(positions, velocities):
+def dumbbell_mesh(positions, velocities, isRigid = False):
     data = [
         State(positions[0],velocities[0]),
         State(positions[1],velocities[1])
     ]
-    return DataList(data, connectivity = [[0,1]])
+    if isRigid:
+        return DataList(data, connectivity = [[0,1]], rig_connectivity = [[0,1,0]])
+    else:
+        return DataList(data, connectivity = [[0,1]])
 
 ################
 ### TRIANGLE ###

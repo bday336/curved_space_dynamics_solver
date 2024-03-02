@@ -1,9 +1,12 @@
 from src.Computation.DataList import DataList
 from src.Computation.RungeKutta import RungeKutta
 from src.Computation.Gauss1 import Gauss1
+from src.Computation.Gauss1test import Gauss1test
 from src.Computation.Gauss2 import Gauss2
+from src.Computation.Gauss2test import Gauss2test
 from src.Computation.Gauss3 import Gauss3
 from src.Computation.Radau2 import Radau2
+from src.Computation.RigidRadau2 import RigidRadau2
 from src.Computation.Radau3 import Radau3
 
 class Simulation:
@@ -73,12 +76,18 @@ class Simulation:
             self.integrator = RungeKutta(self.ambientSpace,self.stepSize)
         elif self.solver_method == "Gauss1":
             self.integrator = Gauss1(self.ambientSpace,self.stepSize)
+        elif self.solver_method == "Gauss1test":
+            self.integrator = Gauss1test(self.ambientSpace,self.stepSize)
         elif self.solver_method == "Gauss2":
             self.integrator = Gauss2(self.ambientSpace,self.stepSize)
+        elif self.solver_method == "Gauss2test":
+            self.integrator = Gauss2test(self.ambientSpace,self.stepSize)
         elif self.solver_method == "Gauss3":
             self.integrator = Gauss3(self.ambientSpace,self.stepSize)
         elif self.solver_method == "Radau2":
             self.integrator = Radau2(self.ambientSpace,self.stepSize)
+        elif self.solver_method == "RigidRadau2":
+            self.integrator = RigidRadau2(self.ambientSpace,self.stepSize)
         elif self.solver_method == "Radau3":
             self.integrator = Radau3(self.ambientSpace,self.stepSize)
 
