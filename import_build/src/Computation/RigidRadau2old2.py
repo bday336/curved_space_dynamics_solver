@@ -4,7 +4,6 @@
 # //.add, .multiplyScalar, .clone
 
 import numpy as np
-from copy import deepcopy
 from numpy import sin, cos, tan, cosh, sinh, tanh, arccosh, sqrt, array, zeros
 
 from src.Computation.DataList import DataList
@@ -69,35 +68,34 @@ class RigidRadau2:
             chunkarr.append(arr[i:i + 3])
         # print(chunkarr)
             
-        # For DataList of States
-        if dataList.data[0].__class__.__name__ == "State":
-            for a in range(0,len(chunkarr),2):
-                # print(chunkarr[a])
-                # print(chunkarr[a+1])
-                temparr.append(State(chunkarr[a],chunkarr[a+1]))
+        # # For DataList of States
+        # if dataList.data[0].__class__.__name__ == "State":
+        #     for a in range(0,len(chunkarr),2):
+        #         # print(chunkarr[a])
+        #         # print(chunkarr[a+1])
+        #         temparr.append(State(chunkarr[a],chunkarr[a+1]))
 
-        # For DataList of dStates
-        if dataList.data[0].__class__.__name__ == "dState":
-            for a in range(0,len(chunkarr),2):
-                # print(chunkarr[a])
-                # print(chunkarr[a+1])
-                temparr.append(dState(chunkarr[a],chunkarr[a+1]))
+        # # For DataList of dStates
+        # if dataList.data[0].__class__.__name__ == "dState":
+        #     for a in range(0,len(chunkarr),2):
+        #         # print(chunkarr[a])
+        #         # print(chunkarr[a+1])
+        #         temparr.append(dState(chunkarr[a],chunkarr[a+1]))
 
-        # for a in range(0,len(chunkarr),2):
-        #     # print(chunkarr[a])
-        #     # print(chunkarr[a+1])
-        #     temparr.append(State(chunkarr[a],chunkarr[a+1]))
+        for a in range(0,len(chunkarr),2):
+            # print(chunkarr[a])
+            # print(chunkarr[a+1])
+            temparr.append(State(chunkarr[a],chunkarr[a+1]))
 
         # for a in range(len(dataList.data)):
         #     # print(a)
         #     temparr.append(State(arr[a*2*3:a*2*3 + 3],arr[a*2*3 + 3:a*2*3 + 6]))
 
-        return DataList(temparr, connectivity=deepcopy(dataList.connectivity), rig_connectivity=deepcopy(dataList.rig_connectivity))
+        return DataList(temparr, connectivity=dataList.connectivity, rig_connectivity=dataList.rig_connectivity)
 
     def dynfunc(self, dataList, params = None):
         temparr = []
         tempconarr = []
-        tempdtconarr = []
         # print(stage)
 
         # Contributions from ambient space geometry
@@ -178,8 +176,6 @@ class RigidRadau2:
                 rigb2 = self.ambientSpace.geometry.funcDict["rig_con_derivative1"](self.m, self.ambientSpace.geometry.metricTensor(dataList.data[b[1]].pos)[1,1], b[-1], d12,  db2d12)
                 rigg2 = self.ambientSpace.geometry.funcDict["rig_con_derivative1"](self.m, self.ambientSpace.geometry.metricTensor(dataList.data[b[1]].pos)[2,2], b[-1], d12,  dg2d12)
 
-                # print([riga1,rigb1,rigg1])
-
 
                 rig_con   = self.ambientSpace.geometry.funcDict["rig_con"](self.x, d12)
                 dtrig_con = self.ambientSpace.geometry.funcDict["rig_con_tderivative1"](self.x, d12, dtd12)
@@ -192,7 +188,7 @@ class RigidRadau2:
                 # print("rig_con")
                 # print(rig_con)
                 tempconarr.append(rig_con)
-                tempdtconarr.append(dtrig_con)
+                tempconarr.append(dtrig_con)
 
         # res_array = []
         # for c in temparr:
@@ -202,7 +198,7 @@ class RigidRadau2:
         # res_array = np.array(res_array).flatten
 
         # return [DataList(temparr, connectivity=dataList.connectivity), res_array]
-        return [DataList(temparr, connectivity=deepcopy(dataList.connectivity), rig_connectivity=deepcopy(dataList.rig_connectivity)),np.array(tempconarr),np.array(tempdtconarr)]
+        return [DataList(temparr, connectivity=dataList.connectivity, rig_connectivity=dataList.rig_connectivity),np.array(tempconarr)]
 
     # Jacobian will be constructed to be largely diagonal to help with efficiently for larger (sparse matrix) systems - block diagonal jacobian
     # This is in contrast with previous iteration of the solver design where top half was velocity residual expressions and bottom half were acceleration residual expressions
@@ -212,9 +208,9 @@ class RigidRadau2:
         # Number of vertices in system
         vert_num = len(dataList.data)
         # Number of constraints
-        con_num = int(len(dataList.rig_connectivity)*2) # Position and velocity constraints both share lagrange multiplier
+        con_num = len(dataList.rig_connectivity) # Position and velocity constraints both share lagrange multiplier
         # Initialize jacobian matrix (multiply by 2 since considering residuals of velocity and accelerations for each vertex)
-        jacobian = np.zeros((2*ambient_dim*vert_num + con_num,2*ambient_dim*vert_num + con_num))
+        jacobian = np.zeros((2*ambient_dim*vert_num + 2*con_num,2*ambient_dim*vert_num + con_num))
 
         # Populate vertex data (block diagonal information in jacobian)
         for a in range(vert_num):
@@ -366,18 +362,18 @@ class RigidRadau2:
                 dg2dg1con12 = self.ambientSpace.geometry.funcDict["rig_con_derivative2"](self.m, metric1diag[2], b[-1], d12, dg1d12, dg2d12, dmetric_terms1[2,5], dg2d12g1)
 
 
-                #Contribution to particle 1 dynamics (block diagonal contribution)
-                part1_geoterms = np.array([
-                    [0., 0., 0.,                           0., 0., 0.],
-                    [0., 0., 0.,                           0., 0., 0.],
-                    [0., 0., 0.,                           0., 0., 0.],
-                    [da1da1con12,db1da1con12,dg1da1con12,  0., 0., 0.],
-                    [da1db1con12,db1db1con12,dg1db1con12,  0., 0., 0.],
-                    [da1dg1con12,db1dg1con12,dg1dg1con12,  0., 0., 0.]
-                ])
+                # # Contribution to particle 1 dynamics (block diagonal contribution)
+                # part1_geoterms = np.array([
+                #     [0., 0., 0.,                           0., 0., 0.],
+                #     [0., 0., 0.,                           0., 0., 0.],
+                #     [0., 0., 0.,                           0., 0., 0.],
+                #     [da1da1con12,db1da1con12,dg1da1con12,  0., 0., 0.],
+                #     [da1db1con12,db1db1con12,dg1db1con12,  0., 0., 0.],
+                #     [da1dg1con12,db1dg1con12,dg1dg1con12,  0., 0., 0.]
+                # ])
 
-                # Minus for correct sign when considering residuals
-                jacobian[b[0]*2*ambient_dim : b[0]*2*ambient_dim + 2 * ambient_dim , b[0]*2*ambient_dim : b[0]*2*ambient_dim + 2 * ambient_dim] = jacobian[b[0]*2*ambient_dim : b[0]*2*ambient_dim + 2 * ambient_dim , b[0]*2*ambient_dim : b[0]*2*ambient_dim + 2 * ambient_dim] - part1_geoterms.copy()
+                # # Minus for correct sign when considering residuals
+                # jacobian[b[0]*2*ambient_dim : b[0]*2*ambient_dim + 2 * ambient_dim , b[0]*2*ambient_dim : b[0]*2*ambient_dim + 2 * ambient_dim] = jacobian[b[0]*2*ambient_dim : b[0]*2*ambient_dim + 2 * ambient_dim , b[0]*2*ambient_dim : b[0]*2*ambient_dim + 2 * ambient_dim] - part1_geoterms.copy()
 
                 # # # Contribution to particle 1 dynamics from particle 2 (off diagonal contribution)
                 # # part1_spterms = np.array([
@@ -391,23 +387,23 @@ class RigidRadau2:
 
                 # # jacobian[b[0]*2*ambient_dim : b[0]*2*ambient_dim + 2 * ambient_dim, b[1]*2*ambient_dim : b[1]*2*ambient_dim + 2 * ambient_dim] = jacobian[b[0]*2*ambient_dim : b[0]*2*ambient_dim + 2 * ambient_dim , b[1]*2*ambient_dim : b[1]*2*ambient_dim + 2 * ambient_dim] + part1_spterms.copy()
 
-                # Contribution to particle 1 dynamics from particle 2 (off diagonal contribution)
-                part1_conterms = np.array([
-                    [0., 0., 0.,                           0., 0., 0.],
-                    [0., 0., 0.,                           0., 0., 0.],
-                    [0., 0., 0.,                           0., 0., 0.],
-                    [da2da1con12,db2da1con12,dg2da1con12,  0., 0., 0.],
-                    [da2db1con12,db2db1con12,dg2db1con12,  0., 0., 0.],
-                    [da2dg1con12,db2dg1con12,dg2dg1con12,  0., 0., 0.]
-                ])
+                # # Contribution to particle 1 dynamics from particle 2 (off diagonal contribution)
+                # part1_conterms = np.array([
+                #     [0., 0., 0.,                           0., 0., 0.],
+                #     [0., 0., 0.,                           0., 0., 0.],
+                #     [0., 0., 0.,                           0., 0., 0.],
+                #     [da2da1con12,db2da1con12,dg2da1con12,  0., 0., 0.],
+                #     [da2db1con12,db2db1con12,dg2db1con12,  0., 0., 0.],
+                #     [da2dg1con12,db2dg1con12,dg2dg1con12,  0., 0., 0.]
+                # ])
 
-                # Minus for correct sign when considering residuals
-                jacobian[b[0]*2*ambient_dim : b[0]*2*ambient_dim + 2 * ambient_dim, b[1]*2*ambient_dim : b[1]*2*ambient_dim + 2 * ambient_dim] = jacobian[b[0]*2*ambient_dim : b[0]*2*ambient_dim + 2 * ambient_dim , b[1]*2*ambient_dim : b[1]*2*ambient_dim + 2 * ambient_dim] - part1_conterms.copy()
+                # # Minus for correct sign when considering residuals
+                # jacobian[b[0]*2*ambient_dim : b[0]*2*ambient_dim + 2 * ambient_dim, b[1]*2*ambient_dim : b[1]*2*ambient_dim + 2 * ambient_dim] = jacobian[b[0]*2*ambient_dim : b[0]*2*ambient_dim + 2 * ambient_dim , b[1]*2*ambient_dim : b[1]*2*ambient_dim + 2 * ambient_dim] - part1_conterms.copy()
 
                 # Constraint contributions (lambda columns)
                 part1_langcolterms = np.array([0.,0.,0.,dlamriga1,dlamrigb1,dlamrigg1])
-                # print("langcolterms")
-                # print(part1_langcolterms)
+                print("langcolterms")
+                print(part1_langcolterms)
 
                 # print(jacobian.shape)
                 # print(jacobian[b[0]*2*ambient_dim : b[0]*2*ambient_dim + 2 * ambient_dim , vert_num*2*ambient_dim + (stage)].shape)
@@ -446,18 +442,18 @@ class RigidRadau2:
                 dg2dg2con12 = self.ambientSpace.geometry.funcDict["rig_con_derivative2"](self.m, metric2diag[2], b[-1], d12, dg2d12, dg2d12, dmetric_terms2[2,5], dg2d12g2)
 
 
-                #Contribution to particle 1 dynamics (block diagonal contribution)
-                part2_geoterms = np.array([
-                    [0., 0., 0.,                           0., 0., 0.],
-                    [0., 0., 0.,                           0., 0., 0.],
-                    [0., 0., 0.,                           0., 0., 0.],
-                    [da2da2con12,db2da2con12,dg2da2con12,  0., 0., 0.],
-                    [da2db2con12,db2db2con12,dg2db2con12,  0., 0., 0.],
-                    [da2dg2con12,db2dg2con12,dg2dg2con12,  0., 0., 0.]
-                ])
+                # # Contribution to particle 1 dynamics (block diagonal contribution)
+                # part2_geoterms = np.array([
+                #     [0., 0., 0.,                           0., 0., 0.],
+                #     [0., 0., 0.,                           0., 0., 0.],
+                #     [0., 0., 0.,                           0., 0., 0.],
+                #     [da2da2con12,db2da2con12,dg2da2con12,  0., 0., 0.],
+                #     [da2db2con12,db2db2con12,dg2db2con12,  0., 0., 0.],
+                #     [da2dg2con12,db2dg2con12,dg2dg2con12,  0., 0., 0.]
+                # ])
 
-                # Minus for correct sign when considering residuals
-                jacobian[b[1]*2*ambient_dim : b[1]*2*ambient_dim + 2 * ambient_dim , b[1]*2*ambient_dim : b[1]*2*ambient_dim + 2 * ambient_dim] = jacobian[b[1]*2*ambient_dim : b[1]*2*ambient_dim + 2 * ambient_dim , b[1]*2*ambient_dim : b[1]*2*ambient_dim + 2 * ambient_dim] - part2_geoterms.copy()
+                # # Minus for correct sign when considering residuals
+                # jacobian[b[1]*2*ambient_dim : b[1]*2*ambient_dim + 2 * ambient_dim , b[1]*2*ambient_dim : b[1]*2*ambient_dim + 2 * ambient_dim] = jacobian[b[1]*2*ambient_dim : b[1]*2*ambient_dim + 2 * ambient_dim , b[1]*2*ambient_dim : b[1]*2*ambient_dim + 2 * ambient_dim] - part2_geoterms.copy()
 
                 # # Contribution to particle 1 dynamics from particle 2 (off diagonal contribution)
                 # part2_spterms = np.array([
@@ -472,73 +468,68 @@ class RigidRadau2:
                 # # Minus for correct sign when considering residuals
                 # jacobian[b[1]*2*ambient_dim : b[1]*2*ambient_dim + 2 * ambient_dim , b[0]*2*ambient_dim : b[0]*2*ambient_dim + 2 * ambient_dim] = jacobian[b[1]*2*ambient_dim : b[1]*2*ambient_dim + 2 * ambient_dim , b[0]*2*ambient_dim : b[0]*2*ambient_dim + 2 * ambient_dim] - part2_spterms.copy()
 
-                # Contribution to particle 1 dynamics from particle 2 (off diagonal contribution)
-                part2_conterms = np.array([
-                    [0., 0., 0.,                           0., 0., 0.],
-                    [0., 0., 0.,                           0., 0., 0.],
-                    [0., 0., 0.,                           0., 0., 0.],
-                    [da1da2con12,db1da2con12,dg1da2con12,  0., 0., 0.],
-                    [da1db2con12,db1db2con12,dg1db2con12,  0., 0., 0.],
-                    [da1dg2con12,db1dg2con12,dg1dg2con12,  0., 0., 0.]
-                ])
-
-                # Minus for correct sign when considering residuals
-                jacobian[b[1]*2*ambient_dim : b[1]*2*ambient_dim + 2 * ambient_dim , b[0]*2*ambient_dim : b[0]*2*ambient_dim + 2 * ambient_dim] = jacobian[b[1]*2*ambient_dim : b[1]*2*ambient_dim + 2 * ambient_dim , b[0]*2*ambient_dim : b[0]*2*ambient_dim + 2 * ambient_dim] - part2_conterms.copy()
-
                 # Constraint contributions (lambda columns)
                 part2_langcolterms = np.array([0.,0.,0.,dlamriga2,dlamrigb2,dlamrigg2])
-                # print(part2_langcolterms)
+                print(part2_langcolterms)
 
                 # Minus for correct sign when considering residuals
                 jacobian[b[1]*2*ambient_dim : b[1]*2*ambient_dim + 2 * ambient_dim , vert_num*2*ambient_dim + dataList.rig_connectivity.index(b)] = jacobian[b[1]*2*ambient_dim : b[1]*2*ambient_dim + 2 * ambient_dim , vert_num*2*ambient_dim + dataList.rig_connectivity.index(b)] - part2_langcolterms.copy()
 
                 # Constraint contributions (lambda rows) - only for stage s for s-stage method
                 langrowconterms = np.array([da1lamcon,db1lamcon,dg1lamcon, 0.,0.,0., da2lamcon,db2lamcon,dg2lamcon, 0.,0.,0.])
-                # print("gamma term")
-                # print(dg1lamcon)
+                print("gamma term")
+                print(dg1lamcon)
 
                 # da1langrowdtconterms = self.ambientSpace.geometry.funcDict["rig_dtcon_derivative1_array"](dataList.data[b[0]],dataList.data[b[1]],ddterms)
                 # dda1langrowdtconterms = np.array([1.,1.,1., 1.,1.,1.]) @ ddterms
 
                 langrowdtconterms = da1langdtconarr
-                # print(b)
-                # print(langrowconterms)
-                # print(langrowdtconterms)
 
                 # langrowdtconterms[0:3] = da1langrowdtconterms[0:3]
                 # langrowdtconterms[3:6] = dda1langrowdtconterms[0:3]
                 # langrowdtconterms[0:3] = da1langrowdtconterms[3:6]
                 # langrowdtconterms[3:6] = dda1langrowdtconterms[3:6]
 
-                jacobian[vert_num*2*ambient_dim + dataList.rig_connectivity.index(b), b[0]*2*ambient_dim : b[0]*2*ambient_dim + 2 * ambient_dim] = jacobian[vert_num*2*ambient_dim + dataList.rig_connectivity.index(b), b[0]*2*ambient_dim : b[0]*2*ambient_dim + 2 * ambient_dim] +  langrowconterms.copy()[0:6]
-                jacobian[vert_num*2*ambient_dim + dataList.rig_connectivity.index(b), b[1]*2*ambient_dim : b[1]*2*ambient_dim + 2 * ambient_dim] = jacobian[vert_num*2*ambient_dim + dataList.rig_connectivity.index(b), b[1]*2*ambient_dim : b[1]*2*ambient_dim + 2 * ambient_dim] +  langrowconterms.copy()[6:12]
-
-                jacobian[vert_num*2*ambient_dim + dataList.rig_connectivity.index(b) + con_num // 2, b[0]*2*ambient_dim : b[0]*2*ambient_dim + 2 * ambient_dim] = jacobian[vert_num*2*ambient_dim + dataList.rig_connectivity.index(b) + con_num // 2, b[0]*2*ambient_dim : b[0]*2*ambient_dim + 2 * ambient_dim] +  langrowdtconterms.copy()[0:6]
-                jacobian[vert_num*2*ambient_dim + dataList.rig_connectivity.index(b) + con_num // 2, b[1]*2*ambient_dim : b[1]*2*ambient_dim + 2 * ambient_dim] = jacobian[vert_num*2*ambient_dim + dataList.rig_connectivity.index(b) + con_num // 2, b[1]*2*ambient_dim : b[1]*2*ambient_dim + 2 * ambient_dim] +  langrowdtconterms.copy()[6:12]
-
-                # jacobian[vert_num*2*ambient_dim + dataList.rig_connectivity.index(b), 0 : vert_num*2*ambient_dim] = jacobian[vert_num*2*ambient_dim + dataList.rig_connectivity.index(b), 0 : vert_num*2*ambient_dim] +  langrowconterms.copy()
-                # jacobian[vert_num*2*ambient_dim + dataList.rig_connectivity.index(b) + con_num // 2 , 0 : vert_num*2*ambient_dim] = jacobian[vert_num*2*ambient_dim + dataList.rig_connectivity.index(b) + con_num // 2 , 0 : vert_num*2*ambient_dim] +  langrowdtconterms.copy()
+                jacobian[vert_num*2*ambient_dim + dataList.rig_connectivity.index(b), 0 : vert_num*2*ambient_dim] = jacobian[vert_num*2*ambient_dim + dataList.rig_connectivity.index(b), 0 : vert_num*2*ambient_dim] +  langrowconterms.copy()
+                jacobian[vert_num*2*ambient_dim + dataList.rig_connectivity.index(b) + 1 , 0 : vert_num*2*ambient_dim] = jacobian[vert_num*2*ambient_dim + dataList.rig_connectivity.index(b) + 1 , 0 : vert_num*2*ambient_dim] +  langrowdtconterms.copy()
 
 
         # fullj = np.eye(2*ambient_dim*vert_num) - jacobian
         return [jacobian[0 : vert_num*2*ambient_dim , 0 : vert_num*2*ambient_dim], jacobian]
 
-    def difffunc(self, dataList, dataListk1n1, dataListk2n1, k1, k2, conterms, dtconterms):
+    def difffunc(self, dataList, k1, k2, conterms):
         # Set to run Gauss 2-stage method
         a11,a12 = [5./12., -1./12.]
         a21,a22 = [3./4., 1./4.]
 
-        # print(k1.toArray())
+        print(dataList.data)
+        print("dataList array")
+        print(dataList.toArray())
+        print("k1 array")
+        print(k1.toArray())
+        print("k1 imput array")
+        print(dataList.toArray() + (a11*k1.toArray() + a12*k2.toArray())*self.stepSize)
+        print("k1 dynfunc output")
+        print(self.dynfunc(self.arrayToDataList(dataList.toArray() + (a11*k1.toArray() + a12*k2.toArray())*self.stepSize, dataList))[0].toArray())
+        print("difference")
+        print(k1.toArray() - self.dynfunc(self.arrayToDataList(dataList.toArray() + (a11*k1.toArray() + a12*k2.toArray())*self.stepSize, dataList))[0].toArray())
+
+        print("drig_con")
+        print(dataList.rig_connectivity)
+        print("k1rig_con")
+        print(k1.rig_connectivity)
+        print("k2rig_con")
+        print(k2.rig_connectivity)
+
         
 
         return np.array([
-            (dataListk1n1.toArray() - dataList.toArray() - self.stepSize*(a11*k1.toArray() + a12*k2.toArray())).tolist()+
-            (dataListk2n1.toArray() - dataList.toArray() - self.stepSize*(a21*k1.toArray() + a22*k2.toArray())).tolist()+
-            (conterms).tolist()+
-            (dtconterms).tolist()
+            (k1.toArray() - self.dynfunc(self.arrayToDataList(dataList.toArray() + (a11*k1.toArray() + a12*k2.toArray())*self.stepSize, dataList))[0].toArray()).tolist()+
+            (k2.toArray() - self.dynfunc(self.arrayToDataList(dataList.toArray() + (a21*k1.toArray() + a22*k2.toArray())*self.stepSize, dataList))[0].toArray()).tolist()+
+            (conterms).tolist()
         ]).flatten()
 
-    def step(self, dataList, tol = 1e-15, imax = 100):
+    def step(self, dataList, tol = 1e-15, imax = 10):
         # Dimension of ambient space (hard coded to 3D at the moment)
         ambient_dim = 3
         # Number of vertices in system
@@ -552,30 +543,52 @@ class RigidRadau2:
         bs1,bs2 = [3./4., 1./4.]
 
         # Initial Guess - Explicit Euler
-        k, _ , _ = self.dynfunc(dataList)
-        x1guess = dataList.toArray() + 0*(1./3.)*self.stepSize*k.toArray()
-        x2guess = dataList.toArray() + 0*(1.)*self.stepSize*k.toArray()
-        x1guessdataList = self.arrayToDataList(x1guess, dataList)
-        x2guessdataList = self.arrayToDataList(x2guess, dataList)
-        k1, _ , _       = self.dynfunc(x1guessdataList.clone())
-        k2, conterms, dtconterms = self.dynfunc(x2guessdataList.clone()) # constraints only satisfied at last stage
-
-
+        k, _ = self.dynfunc(dataList)
+        x1guess = dataList.toArray() + (1./3.)*self.stepSize*k.toArray()
+        x2guess = dataList.toArray() + (1.)*self.stepSize*k.toArray()
+        k1, _        = self.dynfunc(self.arrayToDataList(x1guess, dataList))
+        k2, conterms = self.dynfunc(self.arrayToDataList(x2guess, dataList)) # constraints only satisfied at last stage
+        print("velocity")
+        print(k.data[0].vel)
+        print(k.data[1].vel)
+        print("acceleration")
+        print(k.data[0].acc)
+        print(k.data[1].acc)
+        print("rig_con")
+        print(k.rig_connectivity)
+        print("conterms")
+        print(conterms)
+        print("")
+        print("k1 velocity")
+        print(k1.data[0].vel)
+        print(k1.data[1].vel)
+        print("k1 acceleration")
+        print(k1.data[0].acc)
+        print(k1.data[1].acc)
+        print("rig_con")
+        print(k1.rig_connectivity)
+        print("")
+        print("k2 velocity")
+        print(k2.data[0].vel)
+        print(k2.data[1].vel)
+        print("k2 acceleration")
+        print(k2.data[0].acc)
+        print(k2.data[1].acc)
+        print("rig_con")
+        print(k2.rig_connectivity)
+        print("")
 
         # Check Error Before iterations
-        er = self.difffunc(dataList, x1guessdataList, x2guessdataList, k1, k2, conterms, dtconterms)
-        # print("conlist")
-        # print(er)
-        # print("")
+        er = self.difffunc(dataList, k1, k2, conterms)
+        print("conlist")
+        print(er)
+        print("")
 
         # Begin Iterations
         for a in range(imax):
             if np.linalg.norm(er) >= tol:
-                j1, j1wcon = self.dynjac(x1guessdataList.clone())
-                j2, j2wcon = self.dynjac(x2guessdataList.clone())
-
-                # j1, j1wcon = self.dynjac(self.arrayToDataList(dataList.toArray() + (a11*k1.toArray() + a12*k2.toArray())*self.stepSize, dataList))
-                # j2, j2wcon = self.dynjac(self.arrayToDataList(dataList.toArray() + (a21*k1.toArray() + a22*k2.toArray())*self.stepSize, dataList))
+                j1, j1wcon = self.dynjac(self.arrayToDataList(dataList.toArray() + (a11*k1.toArray() + a12*k2.toArray())*self.stepSize, dataList))
+                j2, j2wcon = self.dynjac(self.arrayToDataList(dataList.toArray() + (a21*k1.toArray() + a22*k2.toArray())*self.stepSize, dataList))
 
                 lambda_block1 = np.zeros((j1.shape[0],con_num))
                 lambda_block2 = np.zeros((j2.shape[0],con_num))
@@ -590,10 +603,8 @@ class RigidRadau2:
                 
                 # print(j1wcon[0 : vert_num*2*ambient_dim , vert_num*2*ambient_dim + con_num//2 : vert_num*2*ambient_dim + con_num].shape)
                 # print(lambda_block2.shape)
-                # print(lambda_block1)
                 conblock = j2wcon[vert_num*2*ambient_dim : vert_num*2*ambient_dim + con_num , 0 : vert_num*2*ambient_dim]
                 # print(conblock.shape)
-                # print(conblock)
                 
                 fullj = np.block([
                     [np.eye(j1.shape[0]) - self.stepSize*a11*j1, - self.stepSize*a12*j1,lambda_block1],
@@ -601,56 +612,27 @@ class RigidRadau2:
                     [np.zeros((con_num,j1.shape[1])),conblock,np.zeros((con_num,con_num))]
                 ])
 
-                # print("Full Jacobian")
-                # print(fullj)
-                # # fullj.astype('float64').tofile('np.dat')
-                # print("")
+                print("Full Jacobian")
+                print(fullj)
+                print("")
                 linsolve = np.linalg.solve(fullj,-er)
-                # print("solution vector")
-                # print(linsolve)
+                print("solution vector")
+                print(linsolve)
 
-                x1guessdataList = self.arrayToDataList(x1guessdataList.toArray() + linsolve[0:j1.shape[0]],x1guessdataList)
-                x2guessdataList = self.arrayToDataList(x2guessdataList.toArray() + linsolve[j2.shape[0]:2*j2.shape[0]],x2guessdataList)
-
-                # print("rig_con")
-                # print(x1guessdataList.rig_connectivity)
-                # print(x2guessdataList.rig_connectivity)
-
-                # print(linsolve[2*j2.shape[0] + con_num//2 : 2*j2.shape[0]+con_num])
+                k1 = self.arrayToDataList(k1.toArray() + linsolve[0:j1.shape[0]],k1)
+                k2 = self.arrayToDataList(k2.toArray() + linsolve[j2.shape[0]:2*j2.shape[0]],k2)
                 # print(linsolve[2*j2.shape[0]:2*j2.shape[0]+con_num])
-                for b in range(len(dataList.rig_connectivity)):
-                    # print(2*j2.shape[0] + b)
-                    # print(linsolve[2*j2.shape[0] + b])
-                    # print(np.array(x1guessdataList.rig_connectivity[b][-1]) + linsolve[2*j2.shape[0] + b])
-                    x1guessdataList.rig_connectivity[b][-1] = (np.array(x1guessdataList.rig_connectivity[b][-1]) + linsolve[2*j2.shape[0] + (b)])
-                    x2guessdataList.rig_connectivity[b][-1] = (np.array(x2guessdataList.rig_connectivity[b][-1]) + linsolve[2*j2.shape[0] + (b+con_num//2)])
-                    # print(b)
-                # print(dataList.rig_connectivity)
-                # print(x1guessdataList.rig_connectivity)
-                # print(x2guessdataList.rig_connectivity)
-
-                k1, _ , _       = self.dynfunc(x1guessdataList.clone())
-                k2, conterms, dtconterms = self.dynfunc(x2guessdataList.clone())  # constraints only satisfied at last stage
-
-                # print("rig_con")
-                # print(x1guessdataList.rig_connectivity)
-                # print(x2guessdataList.rig_connectivity)
-
-
+                for b in dataList.rig_connectivity:
+                    b[-1] = (np.array(b[-1]) + linsolve[2*j2.shape[0] + con_num//2 : 2*j2.shape[0]+con_num])[0]
+                    print(b)
+                print(dataList.rig_connectivity)
 
                 # Need to update conterms
 
-                er = self.difffunc(dataList, x1guessdataList, x2guessdataList, k1, k2, conterms, dtconterms)
-                # print(a)
-                # print("conlist")
-                # print(er)
-                # print("")
+                er = self.difffunc(dataList, k1, k2, conterms)
             else:
                 break
 
-        # print("rig_con")
-        # print(x1guessdataList.rig_connectivity)
-        # print(x2guessdataList.rig_connectivity)
 
-        newarr = x2guessdataList.clone().toArray()
-        return self.arrayToDataList(newarr, x2guessdataList)
+        newarr = dataList.clone().toArray() + self.stepSize*(bs1*k1.toArray() + bs2*k2.toArray())
+        return self.arrayToDataList(newarr, dataList)

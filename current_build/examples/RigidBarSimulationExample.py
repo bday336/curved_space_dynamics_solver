@@ -3,6 +3,7 @@ import os, sys
 sys.path.append(os.path.dirname(os.getcwd()))
 sys.path.append(os.path.dirname(os.getcwd())+"/src")
 
+
 # Import Packages
 import numpy as np
 import matplotlib.pyplot as plt
@@ -10,6 +11,9 @@ from src.function_bank import rot2hyp, hyp2rot, hyp2poin3d, h3dist, killingvech3
 from src.integrator_files.integrator_bank import h3rads2roddae, h3rads3roddae
 from src.test_system_simulations.test_system_bank import dynfunc_h3simbar, dynjac_h3simbar, dynfunc_s3simbar, dynjac_s3simbar
 from src.test_system_simulations.RigidBarSimulation import RigidBarSimulation
+
+np.set_printoptions(linewidth=260) 
+np.set_printoptions(precision=1)
 
 ### Example simulation of a rod body with rigid connection between vertices in 3-dimensional hyperbolic space (H3)
 ### Using the rotational parameterization of hyperboloid model of H3 embedded in E^(3,1) (4D Minkowski Space)
@@ -21,8 +25,11 @@ from src.test_system_simulations.RigidBarSimulation import RigidBarSimulation
 
 
 ## Time array based on time step
-dt = .1         # Time step size
-t_max = 1.      # Total simulation time
+dt = .001         # Time step size
+t_max = .001      # Total simulation time
+
+# dt = .1         # Time step size
+# t_max = 1.      # Total simulation time
 
 ## System Data
 geometry = "h3"     # Geometry of ambient space (currently set to 3-dimensional hyperbolic space)
@@ -37,12 +44,20 @@ params = [m1,m2,x]
 ## Initial Data for System
 # Data here is provided in terms of rotational parameterization of H3 (see build.src.function_bank for details)
 startvec = np.array([
-    [.5,np.pi/2.,np.pi/2.],                         # Initial Position of vertex 1
-    [.5,np.pi/2.,3.*np.pi/2.],                      # Initial Position of vertex 2
-    killingvech3([.5,np.pi/2.,np.pi/2.],v,"x"),     # Initial Velocity of vertex 1
-    killingvech3([.5,np.pi/2.,3.*np.pi/2.],v,"x")   # Initial Velocity of vertex 2
+    [.5,np.pi/2.,0.*np.pi/2.],                         # Initial Position of vertex 1
+    [.5,np.pi/2.,2.*np.pi/2.],                      # Initial Position of vertex 2
+    [0.,0.,1.],     # Initial Velocity of vertex 1
+    [0.,0.,-1.]   # Initial Velocity of vertex 2
     ]).flatten()
-startvec = np.append(startvec,0.5876005968219006)   # Initial Lagrange multiplier value
+startvec = np.append(startvec,0.)   # Initial Lagrange multiplier value
+
+# startvec = np.array([
+#     [.5,np.pi/2.,np.pi/2.],                         # Initial Position of vertex 1
+#     [.5,np.pi/2.,3.*np.pi/2.],                      # Initial Position of vertex 2
+#     killingvech3([.5,np.pi/2.,np.pi/2.],v,"x"),     # Initial Velocity of vertex 1
+#     killingvech3([.5,np.pi/2.,3.*np.pi/2.],v,"x")   # Initial Velocity of vertex 2
+#     ]).flatten()
+# startvec = np.append(startvec,0.5876005968219006)   # Initial Lagrange multiplier value
 
 ## Solver 
 solver_id = "rs2"   # Here using radauIIA scheme with additional velocity constraint (see Schweizer and Li 2015)

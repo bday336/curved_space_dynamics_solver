@@ -7,9 +7,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from random import random,uniform
 
-np.set_printoptions(linewidth=260) 
-np.set_printoptions(precision=1)
-
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
@@ -53,34 +50,10 @@ ambientSpace = hyperbolic
 #     State(np.array([.5,np.pi/2.,np.pi]),np.array([0,0,-1]))
 # ]
 
-# sim_system = dumbbell_mesh(
-#     [np.array([.5,np.pi/2.,0*np.pi/2.]),np.array([.5,np.pi/2.,2.*np.pi/2.])],      # Positions
-#     [np.array([0,0,-2.16395]),np.array([0,0,2.16395])],                                         # Velocities
-#     isRigid=True)
-
-# sim_system = dumbbell_mesh(
-#     [np.array([.5,np.pi/2.,1*np.pi/2.]),np.array([.5,np.pi/2.,3.*np.pi/2.])],      # Positions
-#     [np.array([0,0,-2.16395]),np.array([0,0,2.16395])],                                         # Velocities
-#     isRigid=True).combine(
-#         dumbbell_mesh(
-#             [np.array([.5,np.pi/2.,0.*np.pi/2.]),np.array([.5,np.pi/2.,2.*np.pi/2.])],      # Positions
-#             [np.array([0,1,0]),np.array([0,1,0])],                                         # Velocities
-#             isRigid=True)
-#             ).combine(dumbbell_mesh(
-    # [np.array([.5,0.*np.pi/2.-.1,1.*np.pi/2.]),np.array([.5,2.*np.pi/2.-.1,3.*np.pi/2.])],      # Positions
-    # [np.array([0,0,0]),np.array([0,-1,0])],isRigid=True)                                         # Velocities
-# ))
-
 sim_system = dumbbell_mesh(
-    [np.array([.5,np.pi/2.,1*np.pi/2.]),np.array([.5,np.pi/2.,3.*np.pi/2.])],      # Positions
-    [np.array([0,0,0]),np.array([0,0,1])],                                         # Velocities
-    isRigid=True).combine(dumbbell_mesh(
-    [np.array([.5,np.pi/2.,0.*np.pi/2.]),np.array([.5,np.pi/2.,2.*np.pi/2.])],      # Positions
-    [np.array([0,0,0]),np.array([0,0,1])],                                         # Velocities
-    isRigid=True)).combine(dumbbell_mesh(
-    [np.array([.5,0.*np.pi/2.-.1,3.*np.pi/2.]),np.array([.5,2.*np.pi/2.-.1,3.*np.pi/2.])],      # Positions
-    [np.array([0,0,0]),np.array([0,-1,0])],isRigid=True)                                         # Velocities
-)
+    [np.array([.5,np.pi/2.,1.*np.pi/2.]),np.array([.5,np.pi/2.,3.*np.pi/2.])],      # Positions
+    [np.array([0,0,-1]),np.array([0,0,1])]                                         # Velocities
+    )
 
 # System Parameters
 stiffness = 1.
@@ -99,30 +72,23 @@ for a in range(len(sim_system.data)):
 configurationSpace = ConfigurationSpace(masses, radii, ambientSpace)
 
 
-dt = .001
-tmaxNum = 10000
-
-
-before_dat = sim_system.clone()
+dt = 0.1
+tmaxNum = 100
 
 # //make the simulation
-sim = Simulation( ambientSpace, sim_system, configurationSpace, dt , "RigidRadau2")
+sim = Simulation( ambientSpace, sim_system, configurationSpace, dt , "Radau2")
 
 for c in range(tmaxNum):
-    if c%100 == 0:
-        print(c)
     sim.step()
-
-after_dat = sim_system.clone()
 
 # //make the visualization of the simulation
 # let viz = new RenderSim( sim, radii );
     
 ## Plot Space Trajectory and Distance Error
-fig = plt.figure(figsize=(15,6))
+fig = plt.figure(figsize=(6,6))
 
 ## Plot the Space Trajectory of the Rod Body System
-ax1=fig.add_subplot(1,3,1,projection='3d')
+ax1=fig.add_subplot(1,1,1,projection='3d')
 
 # E3
 
@@ -161,8 +127,11 @@ zb = np.sinh(2)/(np.cosh(2)+1) * np.cos(ub)
 ax1.plot_wireframe(xb, yb, zb, color="k", alpha=.1)
 
 # Data containers for plotting
+comparedata = [ [] for _ in range(len(sim_system.data)) ]
 hyppartdata = [ [] for _ in range(len(sim_system.data)) ]
 partdata = [ [] for _ in range(len(sim_system.data)) ]
+
+diffdata = []
 
 # hyppart1plot=[]
 # hyppart2plot=[]
@@ -188,8 +157,16 @@ partdata = [ [] for _ in range(len(sim_system.data)) ]
 #H3
 for a in range(len(sim.data_container)):
     for b in range(len(sim.data_container[a].data)):
+        comparedata[b].append(list(sim.data_container[a].data[b].pos)+list(sim.data_container[a].data[b].vel))
         hyppartdata[b].append(list(rot2hyp(sim.data_container[a].data[b].pos)))
         partdata[b].append(list(hyp2poin3d(rot2hyp(sim.data_container[a].data[b].pos))))
+
+foo = np.load("h3_r_rs2_sim_tmax10.0_dt0.1.npy")
+
+for i in range(len(comparedata[0])):
+    diffdata.append(comparedata[0][i][0:3]+comparedata[1][i][0:3]+comparedata[0][i][3:6]+comparedata[1][i][3:6] )
+
+diffdata = np.array(diffdata)
 
 for c in range(len(partdata)):
     hyppartdata[c] = np.array(hyppartdata[c])
@@ -253,78 +230,24 @@ for g in range(len(partdata)):
 # ax1.plot3D(part4plot[:,0],part4plot[:,1],part4plot[:,2], label="particle 4")
 ax1.legend(loc= 'lower left')
 
-## Plot the error in distance between vertices compared to fixed distance
-ax2=fig.add_subplot(1,3,2)
-ax3=fig.add_subplot(1,3,3)
+# ## Plot the error in distance between vertices compared to fixed distance
+# ax2=fig.add_subplot(1,2,2)
 
-# Generate distance error data
-condata = [ [] for _ in range(len(sim.data_container[0].rig_connectivity)) ]
-dtcondata = [ [] for _ in range(len(sim.data_container[0].rig_connectivity)) ]
-
-for a in range(len(sim.data_container)):
-    for b in sim.data_container[a].rig_connectivity:
-            # Distance Function
-            d12 = ambientSpace.geometry.funcDict["d12"](sim.data_container[a].data[b[0]],sim.data_container[a].data[b[1]])
-            # First derivatives of distance function
-            da1d12 = ambientSpace.geometry.funcDict["da1d12"](sim.data_container[a].data[b[0]],sim.data_container[a].data[b[1]])
-            db1d12 = ambientSpace.geometry.funcDict["db1d12"](sim.data_container[a].data[b[0]],sim.data_container[a].data[b[1]])
-            dg1d12 = ambientSpace.geometry.funcDict["dg1d12"](sim.data_container[a].data[b[0]],sim.data_container[a].data[b[1]])
-            da2d12 = ambientSpace.geometry.funcDict["da1d12"](sim.data_container[a].data[b[1]],sim.data_container[a].data[b[0]])
-            db2d12 = ambientSpace.geometry.funcDict["db1d12"](sim.data_container[a].data[b[1]],sim.data_container[a].data[b[0]])
-            dg2d12 = ambientSpace.geometry.funcDict["dg1d12"](sim.data_container[a].data[b[1]],sim.data_container[a].data[b[0]])
-
-            dterms = [da1d12,db1d12,dg1d12,da2d12,db2d12,dg2d12]
-
-            dtd12  = ambientSpace.geometry.funcDict["dtd12"](sim.data_container[a].data[b[0]],sim.data_container[a].data[b[1]],dterms)
-
-            rig_con   = ambientSpace.geometry.funcDict["rig_con"](1, d12)
-            dtrig_con = ambientSpace.geometry.funcDict["rig_con_tderivative1"](1, d12, dtd12)
-
-            # print("rig_con")
-            # print(rig_con)
-            condata[sim.data_container[a].rig_connectivity.index(b)].append(rig_con)
-            dtcondata[sim.data_container[a].rig_connectivity.index(b)].append(dtrig_con)
-
-# for a in range(len(sim.data_container)):
-#     for b in range(len(sim.data_container[a].rig_connectivity)):
-#         # print(b)
-#         distdata[b].append(
-#             ambientSpace.distance(sim.data_container[a].data[sim.data_container[a].rig_connectivity[b][0]].pos,sim.data_container[a].data[sim.data_container[a].rig_connectivity[b][1]].pos)
-#             )
-        
-# print(distdata)
+# # Generate distance error data
+# distdata1 = np.zeros(np.shape(data1)[0])
 
 # counter = 0
-# for c in range(len(sim.data_container[a].data)):
-#     distdata[counter] = ambientSpace.distance(rot2hyp(data1[b][0:3]),rot2hyp(data1[b][3:6]))
+# for b in range(np.shape(data1)[0]):
+#     distdata1[counter] = h3dist(rot2hyp(data1[b][0:3]),rot2hyp(data1[b][3:6]))
 #     counter += 1
 
-# Draw distance error as a function of simulation time
-ax2.plot(np.arange(0,tmaxNum*dt+dt,dt),condata[:][0],color='b',label = "Pair 1")
-ax2.plot(np.arange(0,tmaxNum*dt+dt,dt),condata[:][1],color='r',label = "Pair 2")
-ax2.plot(np.arange(0,tmaxNum*dt+dt,dt),condata[:][2],color='g',label = "Pair 3")
-ax2.legend()
-ax2.set_title('Constraint Data')
-ax2.set_xlabel('t')
-ax2.set_ylabel('Position Constraint')
-
-# Draw distance error as a function of simulation time
-ax3.plot(np.arange(0,tmaxNum*dt+dt,dt),dtcondata[:][0],color='b',label = "Pair 1")
-ax3.plot(np.arange(0,tmaxNum*dt+dt,dt),dtcondata[:][1],color='r',label = "Pair 2")
-ax3.plot(np.arange(0,tmaxNum*dt+dt,dt),dtcondata[:][2],color='g',label = "Pair 3")
-ax3.legend()
-ax3.set_title('Constraint Data')
-ax3.set_xlabel('t')
-ax3.set_ylabel('Velocity Constraint')
-
 # # Draw distance error as a function of simulation time
-# ax2.plot(np.arange(0,tmaxNum*dt+dt,dt),np.full(np.array(distdata[0][:]).shape,np.array(distdata[0][0])) - np.array(distdata[0][:]),color='b',label = "Pair 1")
-# ax2.plot(np.arange(0,tmaxNum*dt+dt,dt),np.full(np.array(distdata[1][:]).shape,np.array(distdata[1][0])) - np.array(distdata[1][:]),color='r',label = "Pair 2")
-# ax2.plot(np.arange(0,tmaxNum*dt+dt,dt),np.full(np.array(distdata[2][:]).shape,np.array(distdata[2][0])) - np.array(distdata[2][:]),color='g',label = "Pair 3")
+# ax2.plot(sim_test.t_arr,distdata1,marker = ".",color='k',linestyle = "None",label = "Gauss s1")
+# ax2.plot(sim_test.t_arr,np.full(sim_test.t_arr.shape,(r1+r2)),color='r',label = "Collision Boundary")
 # ax2.legend()
-# ax2.set_title('Distance Data')
+# ax2.set_title('Simulation Data')
 # ax2.set_xlabel('t')
-# ax2.set_ylabel('Vertex Separation')
+# ax2.set_ylabel('l')
 
 fig.tight_layout()	
 
@@ -459,4 +382,4 @@ plt.show()
 # # have changed.
 # anim = animation.FuncAnimation(fig, animate,frames=frames, interval=50)
 
-# anim.save('./h3rigidmeshrs2newtest3.mov', writer='imagemagick')
+# anim.save('./h3springcomparers3newtest.mov', writer='imagemagick')

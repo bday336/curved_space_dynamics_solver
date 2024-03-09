@@ -364,8 +364,8 @@ def con12(l, d12):
 def dtcon12(l, d12,  dtd12):
     return dtd12/(sqrt(d12**2. - 1.))
 
-def ddtcon12(l, d12,  dtd12, dttd12):
-    return 1./(sqrt(d12**2. - 1.)) * (dttd12 - d12*dtd12**2./(d12**2. - 1.))
+# def ddtcon12(l, d12,  dtd12, dttd12):
+#     return 1./(sqrt(d12**2. - 1.)) * (dttd12 - d12*dtd12**2./(d12**2. - 1.))
 
 # Use first and second derivative functions from spring data above since constant becomes zero with derivative
 
@@ -374,19 +374,29 @@ def da1con12(m, f, lam, d12,  da1d12):
     return lam*da1d12/(m * f * sqrt(d12**2. - 1.))
 
 # First derivative of velocity constriant for jacobian
-def da1dtcon12array(dstate1, dstate2, da1dterms):
+def da1dtcon12array(dstate1, dstate2, d12, dtd12, dterms, da1dterms):
     # Replace dterms with da1dterms - i.e. derivative of dterms with respect to da1 typically given by the hessian
     da1,db1,dg1 = dstate1.vel.copy()
     da2,db2,dg2 = dstate2.vel.copy()
-    return (np.array([da1,db1,dg1,da2,db2,dg2]) @ np.array(da1dterms))
+    dterms = np.array(dterms)
+    da1dtd12arr = np.array([da1,db1,dg1,da2,db2,dg2]) @ np.array(da1dterms)
+    dda1dtd12arr = np.eye(6) @ np.array(dterms)
+    da1dtconterms  = (da1dtd12arr - (d12 * dterms * dtd12)/(d12**2. - 1))/np.sqrt(d12**2. - 1.)
+    dda1dtconterms = (dda1dtd12arr)/np.sqrt(d12**2. - 1.)
+    return np.array([
+        da1dtconterms[0], da1dtconterms[1], da1dtconterms[2],
+        dda1dtconterms[0],dda1dtconterms[1],dda1dtconterms[2],
+        da1dtconterms[3], da1dtconterms[4], da1dtconterms[5],
+        dda1dtconterms[3],dda1dtconterms[4],dda1dtconterms[5],
+    ])
 
 # First derivative of acceleration constraint for jacobian (WRONG need to consider derivative of dda1 terms...)
-def da1ddtcon12(dstate1, dstate2, dterms, da1ddterms):
-    da1,db1,dg1 = dstate1.vel.copy()
-    da2,db2,dg2 = dstate2.vel.copy()
-    dda1,ddb1,ddg1 = dstate1.acc.copy()
-    dda2,ddb2,ddg2 = dstate2.acc.copy()
-    return (np.array([dda1,ddb1,ddg1,dda2,ddb2,ddg2]) @ np.array(dterms) + np.array([da1,db1,dg1,da2,db2,dg2]) @ np.array(da1ddterms) @ np.array([da1,db1,dg1,da2,db2,dg2]))
+# def da1ddtcon12(dstate1, dstate2, dterms, da1ddterms):
+#     da1,db1,dg1 = dstate1.vel.copy()
+#     da2,db2,dg2 = dstate2.vel.copy()
+#     dda1,ddb1,ddg1 = dstate1.acc.copy()
+#     dda2,ddb2,ddg2 = dstate2.acc.copy()
+#     return (np.array([dda1,ddb1,ddg1,dda2,ddb2,ddg2]) @ np.array(dterms) + np.array([da1,db1,dg1,da2,db2,dg2]) @ np.array(da1ddterms) @ np.array([da1,db1,dg1,da2,db2,dg2]))
 
 
 # Second derivative term of rigidity constraint (for use in jacobian)
@@ -432,7 +442,7 @@ hypFuncDict = {
     "rig_con" : con12,
 
     "rig_con_tderivative1" : dtcon12,
-    "rig_con_tderivative2" : ddtcon12,
+    # "rig_con_tderivative2" : ddtcon12,
 
     "rig_con_derivative1" : da1con12,
     "rig_con_derivative2" : da2da1con12,

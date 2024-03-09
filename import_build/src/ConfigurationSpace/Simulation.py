@@ -6,6 +6,7 @@ from src.Computation.Gauss2 import Gauss2
 from src.Computation.Gauss2test import Gauss2test
 from src.Computation.Gauss3 import Gauss3
 from src.Computation.Radau2 import Radau2
+from src.Computation.Radau2test import Radau2test
 from src.Computation.RigidRadau2 import RigidRadau2
 from src.Computation.Radau3 import Radau3
 
@@ -86,6 +87,8 @@ class Simulation:
             self.integrator = Gauss3(self.ambientSpace,self.stepSize)
         elif self.solver_method == "Radau2":
             self.integrator = Radau2(self.ambientSpace,self.stepSize)
+        elif self.solver_method == "Radau2test":
+            self.integrator = Radau2test(self.ambientSpace,self.stepSize)
         elif self.solver_method == "RigidRadau2":
             self.integrator = RigidRadau2(self.ambientSpace,self.stepSize)
         elif self.solver_method == "Radau3":

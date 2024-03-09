@@ -119,8 +119,8 @@ class ConfigurationSpace:
                     indices.append(i)
         if(len(indices)==0):
             return indices
-        # print("obstacle collision")
-        # print(indices)
+        print("obstacle collision")
+        print(indices)
         return indices
 
     # //compute the gradient of the distance function to the boundary

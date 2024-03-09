@@ -39,13 +39,20 @@ params = [v,ks,x,m]
 startvec = np.array([
     [.5,np.pi/2.,np.pi/2.],                         # Initial Position of vertex 1
     [.5,np.pi/2.,3.*np.pi/2.],                      # Initial Position of vertex 2
-    killingvech3([.5,np.pi/2.,np.pi/2.],v,"x"),     # Initial Velocity of vertex 1
-    killingvech3([.5,np.pi/2.,3.*np.pi/2.],v,"x")   # Initial Velocity of vertex 2
+    [0,0,-1],     # Initial Velocity of vertex 1
+    [0,0,1]   # Initial Velocity of vertex 2
     ]).flatten()
+
+# startvec = np.array([
+#     [.5,np.pi/2.,np.pi/2.],                         # Initial Position of vertex 1
+#     [.5,np.pi/2.,3.*np.pi/2.],                      # Initial Position of vertex 2
+#     killingvech3([.5,np.pi/2.,np.pi/2.],v,"x"),     # Initial Velocity of vertex 1
+#     killingvech3([.5,np.pi/2.,3.*np.pi/2.],v,"x")   # Initial Velocity of vertex 2
+#     ]).flatten()
 
 
 ## Solver 
-solver_id = "gs1"   # Here using Gauss collocation method with 1 internal step
+solver_id = "rs2"   # Here using Gauss collocation method with 1 internal step
 
 ## Initialize Simulation Object and Run Simulation
 sim_test = SpringBarSimulation(geometry, params, dt, t_max, solver_id)
