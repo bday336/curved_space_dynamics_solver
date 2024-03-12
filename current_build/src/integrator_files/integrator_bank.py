@@ -342,8 +342,8 @@ def h3rads2roddae(startvec, params, dt, tol = 1e-10, imax = 1):
     ex17,dex17 = h3rads2rodex17(stepn,stepc1,stepc2,dt,params)
     ex18,dex18 = h3rads2rodex18(stepn,stepc1,stepc2,dt,params)
 
-    print(ex13)
-    print(ex14)
+    # print(ex13)
+    # print(ex14)
 
     ex19,dex19 = h3rads2rodex19(stepn,stepc1,stepc2,dt,params)
     ex20,dex20 = h3rads2rodex20(stepn,stepc1,stepc2,dt,params)
@@ -352,8 +352,8 @@ def h3rads2roddae(startvec, params, dt, tol = 1e-10, imax = 1):
     ex23,dex23 = h3rads2rodex23(stepn,stepc1,stepc2,dt,params)
     ex24,dex24 = h3rads2rodex24(stepn,stepc1,stepc2,dt,params)
 
-    print(ex19)
-    print(ex20)
+    # print(ex19)
+    # print(ex20)
 
     ex25,dex25 = h3rads2rodex25(stepn,stepc1,stepc2,dt,params)
     ex26,dex26 = h3rads2rodex26(stepn,stepc1,stepc2,dt,params)
@@ -374,7 +374,7 @@ def h3rads2roddae(startvec, params, dt, tol = 1e-10, imax = 1):
         dex25,dex26
 
     ])
-    print(jacobian)
+    # print(jacobian)
 
     conlist = np.array([
         ex1,ex2,ex3,
@@ -391,16 +391,16 @@ def h3rads2roddae(startvec, params, dt, tol = 1e-10, imax = 1):
 
         ex25,ex26
     ])
-    print("conlist")
-    print(conlist)
+    # print("conlist")
+    # print(conlist)
 
     diff1 = np.linalg.solve(jacobian,-conlist)
-    print("solution vector")
-    print(diff1)
+    # print("solution vector")
+    # print(diff1)
 
     val1 = diff1 + initvec
-    print("next step")
-    print(val1)
+    # print("next step")
+    # print(val1)
 
     # Begin Iterations
     counter = 0
@@ -455,7 +455,7 @@ def h3rads2roddae(startvec, params, dt, tol = 1e-10, imax = 1):
             dex25,dex26
 
         ])
-        print(jacobian)
+        # print(jacobian)
 
         conlist = np.array([
             ex1,ex2,ex3,
@@ -472,16 +472,16 @@ def h3rads2roddae(startvec, params, dt, tol = 1e-10, imax = 1):
 
             ex25,ex26
         ])
-        print("conlist")
-        print(conlist)
+        # print("conlist")
+        # print(conlist)
 
         diff2 = np.linalg.solve(jacobian,-conlist)
-        print("solution vector")
-        print(diff2)
+        # print("solution vector")
+        # print(diff2)
 
         val2 = diff2 + val1
-        print("next step")
-        print(val2)
+        # print("next step")
+        # print(val2)
 
         val1 = val2
         diff1 = diff2

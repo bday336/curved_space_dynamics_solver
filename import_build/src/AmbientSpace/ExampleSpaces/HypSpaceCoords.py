@@ -280,6 +280,280 @@ def dg2D12g1(state1, state2):
 
 # dg2D12g2 = dg1D12g1(a2, b2, g2, a1, b1, g1)
 
+# Third Derivatives of distance function (Only needed for implicit methods for jacobian construction)
+
+# da1D12a1 terms
+
+# def da1D12a1(state1, state2):
+#     a1,b1,g1 = state1.pos.copy()
+#     a2,b2,g2 = state2.pos.copy()
+#     return cosh(a1)*cosh(a2) - sinh(a1)*cos(b1)*sinh(a2)*cos(b2) - sinh(a1)*sin(b1)*sinh(a2)*sin(b2)*cos(g1 - g2)
+
+def da1da1D12a1(state1, state2):
+    a1,b1,g1 = state1.pos.copy()
+    a2,b2,g2 = state2.pos.copy()
+    return sinh(a1)*cosh(a2) - cosh(a1)*cos(b1)*sinh(a2)*cos(b2) - cosh(a1)*sin(b1)*sinh(a2)*sin(b2)*cos(g1 - g2)
+
+def db1da1D12a1(state1, state2):
+    a1,b1,g1 = state1.pos.copy()
+    a2,b2,g2 = state2.pos.copy()
+    return sinh(a1)*sin(b1)*sinh(a2)*cos(b2) - sinh(a1)*cos(b1)*sinh(a2)*sin(b2)*cos(g1 - g2)
+
+def dg1da1D12a1(state1, state2):
+    a1,b1,g1 = state1.pos.copy()
+    a2,b2,g2 = state2.pos.copy()
+    return sinh(a1)*sin(b1)*sinh(a2)*sin(b2)*sin(g1 - g2)
+
+# def da2da1D12a1(state1, state2): # same as da1da1D12a1 with arg swap
+#     a1,b1,g1 = state1.pos.copy()
+#     a2,b2,g2 = state2.pos.copy()
+#     return cosh(a1)*sinh(a2) - sinh(a1)*cos(b1)*cosh(a2)*cos(b2) - sinh(a1)*sin(b1)*cosh(a2)*sin(b2)*cos(g1 - g2)
+
+# def db2da1D12a1(state1, state2): # same as db1da1D12a1 with arg swap
+#     a1,b1,g1 = state1.pos.copy()
+#     a2,b2,g2 = state2.pos.copy()
+#     return sinh(a1)*cos(b1)*sinh(a2)*sin(b2) - sinh(a1)*sin(b1)*sinh(a2)*cos(b2)*cos(g1 - g2)
+
+# def dg2da1D12a1(state1, state2): # same as dg1da1D12a1 with arg swap
+#     a1,b1,g1 = state1.pos.copy()
+#     a2,b2,g2 = state2.pos.copy()
+#     return - sinh(a1)*sin(b1)*sinh(a2)*sin(b2)*sin(g1 - g2)
+
+# db1D12a1 terms
+
+# def db1D12a1(state1, state2):
+#     a1,b1,g1 = state1.pos.copy()
+#     a2,b2,g2 = state2.pos.copy()
+#     return cosh(a1)*sin(b1)*sinh(a2)*cos(b2) - cosh(a1)*cos(b1)*sinh(a2)*sin(b2)*cos(g1 - g2)
+
+def da1db1D12a1(state1, state2):
+    a1,b1,g1 = state1.pos.copy()
+    a2,b2,g2 = state2.pos.copy()
+    return sinh(a1)*sin(b1)*sinh(a2)*cos(b2) - sinh(a1)*cos(b1)*sinh(a2)*sin(b2)*cos(g1 - g2)
+
+def db1db1D12a1(state1, state2):
+    a1,b1,g1 = state1.pos.copy()
+    a2,b2,g2 = state2.pos.copy()
+    return cosh(a1)*cos(b1)*sinh(a2)*cos(b2) + cosh(a1)*sin(b1)*sinh(a2)*sin(b2)*cos(g1 - g2)
+
+def dg1db1D12a1(state1, state2):
+    a1,b1,g1 = state1.pos.copy()
+    a2,b2,g2 = state2.pos.copy()
+    return cosh(a1)*cos(b1)*sinh(a2)*sin(b2)*sin(g1 - g2)
+
+def da2db1D12a1(state1, state2):
+    a1,b1,g1 = state1.pos.copy()
+    a2,b2,g2 = state2.pos.copy()
+    return cosh(a1)*sin(b1)*cosh(a2)*cos(b2) - cosh(a1)*cos(b1)*cosh(a2)*sin(b2)*cos(g1 - g2)
+
+def db2db1D12a1(state1, state2):
+    a1,b1,g1 = state1.pos.copy()
+    a2,b2,g2 = state2.pos.copy()
+    return - cosh(a1)*sin(b1)*sinh(a2)*sin(b2) - cosh(a1)*cos(b1)*sinh(a2)*cos(b2)*cos(g1 - g2)
+
+def dg2db1D12a1(state1, state2):
+    a1,b1,g1 = state1.pos.copy()
+    a2,b2,g2 = state2.pos.copy()
+    return - cosh(a1)*cos(b1)*sinh(a2)*sin(b2)*sin(g1 - g2)
+
+# dg1D12a1 terms
+
+# def dg1D12a1(state1, state2):
+#     a1,b1,g1 = state1.pos.copy()
+#     a2,b2,g2 = state2.pos.copy()
+#     return cosh(a1)*sin(b1)*sinh(a2)*sin(b2)*sin(g1 - g2)
+
+def da1dg1D12a1(state1, state2):
+    a1,b1,g1 = state1.pos.copy()
+    a2,b2,g2 = state2.pos.copy()
+    return sinh(a1)*sin(b1)*sinh(a2)*sin(b2)*sin(g1 - g2)
+
+def db1dg1D12a1(state1, state2):
+    a1,b1,g1 = state1.pos.copy()
+    a2,b2,g2 = state2.pos.copy()
+    return cosh(a1)*cos(b1)*sinh(a2)*sin(b2)*sin(g1 - g2)
+
+def dg1dg1D12a1(state1, state2):
+    a1,b1,g1 = state1.pos.copy()
+    a2,b2,g2 = state2.pos.copy()
+    return cosh(a1)*sin(b1)*sinh(a2)*sin(b2)*cos(g1 - g2)
+
+def da2dg1D12a1(state1, state2):
+    a1,b1,g1 = state1.pos.copy()
+    a2,b2,g2 = state2.pos.copy()
+    return cosh(a1)*sin(b1)*cosh(a2)*sin(b2)*sin(g1 - g2)
+
+def db2dg1D12a1(state1, state2):
+    a1,b1,g1 = state1.pos.copy()
+    a2,b2,g2 = state2.pos.copy()
+    return cosh(a1)*sin(b1)*sinh(a2)*cos(b2)*sin(g1 - g2)
+
+def dg2dg1D12a1(state1, state2):
+    a1,b1,g1 = state1.pos.copy()
+    a2,b2,g2 = state2.pos.copy()
+    return - cosh(a1)*sin(b1)*sinh(a2)*sin(b2)*cos(g1 - g2)
+
+# da2D12a1 terms
+
+# def da2D12a1(state1, state2):
+#     a1,b1,g1 = state1.pos.copy()
+#     a2,b2,g2 = state2.pos.copy()
+#     return sinh(a1)*sinh(a2) - cosh(a1)*cos(b1)*cosh(a2)*cos(b2) - cosh(a1)*sin(b1)*cosh(a2)*sin(b2)*cos(g1 - g2)
+
+def da1da2D12a1(state1, state2):
+    a1,b1,g1 = state1.pos.copy()
+    a2,b2,g2 = state2.pos.copy()
+    return cosh(a1)*sinh(a2) - sinh(a1)*cos(b1)*cosh(a2)*cos(b2) - sinh(a1)*sin(b1)*cosh(a2)*sin(b2)*cos(g1 - g2)
+
+def db1da2D12a1(state1, state2):
+    a1,b1,g1 = state1.pos.copy()
+    a2,b2,g2 = state2.pos.copy()
+    return cosh(a1)*sin(b1)*cosh(a2)*cos(b2) - cosh(a1)*cos(b1)*cosh(a2)*sin(b2)*cos(g1 - g2)
+
+def dg1da2D12a1(state1, state2):
+    a1,b1,g1 = state1.pos.copy()
+    a2,b2,g2 = state2.pos.copy()
+    return cosh(a1)*sin(b1)*cosh(a2)*sin(b2)*sin(g1 - g2)
+
+def da2da2D12a1(state1, state2):
+    a1,b1,g1 = state1.pos.copy()
+    a2,b2,g2 = state2.pos.copy()
+    return sinh(a1)*cosh(a2) - cosh(a1)*cos(b1)*sinh(a2)*cos(b2) - cosh(a1)*sin(b1)*sinh(a2)*sin(b2)*cos(g1 - g2)
+
+def db2da2D12a1(state1, state2):
+    a1,b1,g1 = state1.pos.copy()
+    a2,b2,g2 = state2.pos.copy()
+    return cosh(a1)*cos(b1)*cosh(a2)*sin(b2) - cosh(a1)*sin(b1)*cosh(a2)*cos(b2)*cos(g1 - g2)
+
+def dg2da2D12a1(state1, state2):
+    a1,b1,g1 = state1.pos.copy()
+    a2,b2,g2 = state2.pos.copy()
+    return - cosh(a1)*sin(b1)*cosh(a2)*sin(b2)*sin(g1 - g2)
+
+# db2D12a1 terms
+
+# def db2D12a1(state1, state2):
+#     a1,b1,g1 = state1.pos.copy()
+#     a2,b2,g2 = state2.pos.copy()
+#     return cosh(a1)*cos(b1)*sinh(a2)*sin(b2) - cosh(a1)*sin(b1)*sinh(a2)*cos(b2)*cos(g1 - g2)
+
+def da1db2D12a1(state1, state2):
+    a1,b1,g1 = state1.pos.copy()
+    a2,b2,g2 = state2.pos.copy()
+    return sinh(a1)*cos(b1)*sinh(a2)*sin(b2) - sinh(a1)*sin(b1)*sinh(a2)*cos(b2)*cos(g1 - g2)
+
+def db1db2D12a1(state1, state2):
+    a1,b1,g1 = state1.pos.copy()
+    a2,b2,g2 = state2.pos.copy()
+    return - cosh(a1)*sin(b1)*sinh(a2)*sin(b2) - cosh(a1)*cos(b1)*sinh(a2)*cos(b2)*cos(g1 - g2)
+
+def dg1db2D12a1(state1, state2):
+    a1,b1,g1 = state1.pos.copy()
+    a2,b2,g2 = state2.pos.copy()
+    return cosh(a1)*sin(b1)*sinh(a2)*cos(b2)*sin(g1 - g2)
+
+def da2db2D12a1(state1, state2):
+    a1,b1,g1 = state1.pos.copy()
+    a2,b2,g2 = state2.pos.copy()
+    return cosh(a1)*cos(b1)*cosh(a2)*sin(b2) - cosh(a1)*sin(b1)*cosh(a2)*cos(b2)*cos(g1 - g2)
+
+def db2db2D12a1(state1, state2):
+    a1,b1,g1 = state1.pos.copy()
+    a2,b2,g2 = state2.pos.copy()
+    return cosh(a1)*cos(b1)*sinh(a2)*cos(b2) + cosh(a1)*sin(b1)*sinh(a2)*sin(b2)*cos(g1 - g2)
+
+def dg2db2D12a1(state1, state2):
+    a1,b1,g1 = state1.pos.copy()
+    a2,b2,g2 = state2.pos.copy()
+    return - cosh(a1)*sin(b1)*sinh(a2)*cos(b2)*sin(g1 - g2)
+
+# dg2D12a1 terms
+
+# def dg2D12a1(state1, state2):
+#     a1,b1,g1 = state1.pos.copy()
+#     a2,b2,g2 = state2.pos.copy()
+#     return -cosh(a1)*sin(b1)*sinh(a2)*sin(b2)*sin(g1 - g2)
+
+def da1dg2D12a1(state1, state2):
+    a1,b1,g1 = state1.pos.copy()
+    a2,b2,g2 = state2.pos.copy()
+    return -sinh(a1)*sin(b1)*sinh(a2)*sin(b2)*sin(g1 - g2)
+
+def db1dg2D12a1(state1, state2):
+    a1,b1,g1 = state1.pos.copy()
+    a2,b2,g2 = state2.pos.copy()
+    return -cosh(a1)*cos(b1)*sinh(a2)*sin(b2)*sin(g1 - g2)
+
+def dg1dg2D12a1(state1, state2):
+    a1,b1,g1 = state1.pos.copy()
+    a2,b2,g2 = state2.pos.copy()
+    return -cosh(a1)*sin(b1)*sinh(a2)*sin(b2)*cos(g1 - g2)
+
+def da2dg2D12a1(state1, state2):
+    a1,b1,g1 = state1.pos.copy()
+    a2,b2,g2 = state2.pos.copy()
+    return -cosh(a1)*sin(b1)*cosh(a2)*sin(b2)*sin(g1 - g2)
+
+def db2dg2D12a1(state1, state2):
+    a1,b1,g1 = state1.pos.copy()
+    a2,b2,g2 = state2.pos.copy()
+    return -cosh(a1)*sin(b1)*sinh(a2)*cos(b2)*sin(g1 - g2)
+
+def dg2dg2D12a1(state1, state2):
+    a1,b1,g1 = state1.pos.copy()
+    a2,b2,g2 = state2.pos.copy()
+    return cosh(a1)*sin(b1)*sinh(a2)*sin(b2)*cos(g1 - g2)
+
+# db1D12b1 terms
+
+
+
+def db1D12b1(state1, state2):
+    a1,b1,g1 = state1.pos.copy()
+    a2,b2,g2 = state2.pos.copy()
+    return sinh(a1)*cos(b1)*sinh(a2)*cos(b2) + sinh(a1)*sin(b1)*sinh(a2)*sin(b2)*cos(g1 - g2)
+
+def dg1D12b1(state1, state2):
+    a1,b1,g1 = state1.pos.copy()
+    a2,b2,g2 = state2.pos.copy()
+    return sinh(a1)*cos(b1)*sinh(a2)*sin(b2)*sin(g1 - g2)
+
+def db2D12b1(state1, state2):
+    a1,b1,g1 = state1.pos.copy()
+    a2,b2,g2 = state2.pos.copy()
+    return -sinh(a1)*sin(b1)*sinh(a2)*sin(b2) - sinh(a1)*cos(b1)*sinh(a2)*cos(b2)*cos(g1 - g2)
+
+def dg2D12b1(state1, state2):
+    a1,b1,g1 = state1.pos.copy()
+    a2,b2,g2 = state2.pos.copy()
+    return -sinh(a1)*cos(b1)*sinh(a2)*sin(b2)*sin(g1 - g2)
+
+def dg1D12g1(state1, state2):
+    a1,b1,g1 = state1.pos.copy()
+    a2,b2,g2 = state2.pos.copy()
+    return sinh(a1)*sin(b1)*sinh(a2)*sin(b2)*cos(g1 - g2)
+
+def dg2D12g1(state1, state2):
+    a1,b1,g1 = state1.pos.copy()
+    a2,b2,g2 = state2.pos.copy()
+    return -sinh(a1)*sin(b1)*sinh(a2)*sin(b2)*cos(g1 - g2)
+# For the remaining nine functions of the upper triangular matrix use:
+# da2D12b1 = db2D12a1(a2, b2, g2, a1, b1, g1)
+
+# da2D12g1 = dg2D12a1(a2, b2, g2, a1, b1, g1)
+# db2D12g1 = dg2D12b1(a2, b2, g2, a1, b1, g1)
+
+# da2D12a2 = da1D12a1(a2, b2, g2, a1, b1, g1)
+# db2D12a2 = db1D12a1(a2, b2, g2, a1, b1, g1)
+# dg2D12a2 = dg1D12a1(a2, b2, g2, a1, b1, g1)
+
+# db2D12b2 = db1D12b1(a2, b2, g2, a1, b1, g1)
+# dg2D12b2 = dg1D12b1(a2, b2, g2, a1, b1, g1)
+
+# dg2D12g2 = dg1D12g1(a2, b2, g2, a1, b1, g1)
+
+
+
 # Derivative of metric components for pairwise coupling components
 # Derivative at state1 in terms of coordinates of both vertices
 # Needed for calculation of spring term contribution
@@ -364,8 +638,8 @@ def con12(l, d12):
 def dtcon12(l, d12,  dtd12):
     return dtd12/(sqrt(d12**2. - 1.))
 
-# def ddtcon12(l, d12,  dtd12, dttd12):
-#     return 1./(sqrt(d12**2. - 1.)) * (dttd12 - d12*dtd12**2./(d12**2. - 1.))
+def ddtcon12(l, d12,  dtd12, dttd12):
+    return 1./(sqrt(d12**2. - 1.)) * (dttd12 - d12*dtd12**2./(d12**2. - 1.))
 
 # Use first and second derivative functions from spring data above since constant becomes zero with derivative
 
@@ -442,7 +716,7 @@ hypFuncDict = {
     "rig_con" : con12,
 
     "rig_con_tderivative1" : dtcon12,
-    # "rig_con_tderivative2" : ddtcon12,
+    "rig_con_tderivative2" : ddtcon12,
 
     "rig_con_derivative1" : da1con12,
     "rig_con_derivative2" : da2da1con12,

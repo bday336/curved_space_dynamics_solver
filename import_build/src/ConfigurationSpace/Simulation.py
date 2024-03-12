@@ -9,6 +9,7 @@ from src.Computation.Radau2 import Radau2
 from src.Computation.Radau2test import Radau2test
 from src.Computation.RigidRadau2 import RigidRadau2
 from src.Computation.Radau3 import Radau3
+from src.Computation.RigidRadau3 import RigidRadau3
 
 class Simulation:
     """
@@ -93,6 +94,8 @@ class Simulation:
             self.integrator = RigidRadau2(self.ambientSpace,self.stepSize)
         elif self.solver_method == "Radau3":
             self.integrator = Radau3(self.ambientSpace,self.stepSize)
+        elif self.solver_method == "RigidRadau3":
+            self.integrator = RigidRadau3(self.ambientSpace,self.stepSize)
 
     # def deriveFunc(self, dataList):
     #     temparr = []
