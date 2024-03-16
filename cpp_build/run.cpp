@@ -1,25 +1,72 @@
+// C++ libraries
+#include <iostream>
+#include <vector>
+#include <math.h>
+// #include "includes/eigen-3.4.0/Eigen/Dense"
 
+// Project libraries
+#include "Computation/pairwise_connections.h"
+#include "Computation/DataList.h"
+#include "Computation/State.h"
+#include "Computation/DState.h"
 
+// Define Constants
+const double PI = 3.141592653589793238463;
 
 int main()
 {
+    std::cout << "Complied at least" << std::endl;
 
+    // std::cout.precision(15); // Max double precision
+    // std::cout << PI << std::endl;
+
+    // Eigen::Vector3d pos(.5, PI/2., 0.);
+    // Eigen::Vector3d vel(0.,0.,1.);
+
+    std::vector<double> pos = {.5, PI/2., 0.};
+    std::vector<double> vel = {0.,0.,1.};
+
+    State test_state(pos,vel);
+
+    std::vector<double> acc = {1.,-10.,1.};
+
+    DState test_dstate(vel,acc);
+
+    test_state.print_info();
+    test_dstate.print_info();
+
+    Pairwise_Connection index1;
+    index1.index_pair = {0,1};
+
+    Pairwise_Rigid_Connection index2;
+    index2.index_pair = {0,1};
+    index2.lagrange_multipler = 0.3332342;
+
+    std::vector<State> states = {test_state, test_state};
+
+    states.push_back(test_state);
+
+    // for(State item : states)
+    // {
+    //     item.print_info();
+    // }
+
+    std::vector<Pairwise_Connection> connectivity;
+    std::vector<Pairwise_Rigid_Connection> rig_connectivity;
+
+    connectivity.push_back(index1);
+    rig_connectivity.push_back(index2);
+
+    DataList<State> dlist_test(states,connectivity,rig_connectivity);
+
+    dlist_test.print_info();
+
+
+
+
+    // std::cout <<  << "\n";
 }
 
-
-// # Allow for package importing
-// import os, sys
-// sys.path.append(os.path.dirname(os.getcwd()))
-// sys.path.append(os.path.dirname(os.getcwd())+"/src")
-
-// import numpy as np
-// import matplotlib.pyplot as plt
-// from random import random,uniform
-
-// from mpl_toolkits.mplot3d import Axes3D
-// import matplotlib.pyplot as plt
-// from matplotlib import gridspec
-// from matplotlib import animation, rc
 
 // # Import Packages
 // from src.utils.mesh_bank import particle_mesh, dumbbell_mesh

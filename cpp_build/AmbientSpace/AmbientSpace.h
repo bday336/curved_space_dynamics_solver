@@ -1,22 +1,45 @@
-#ifndef AMBIENT_SPACE
-#define AMBIENT_SPACE
+#ifndef AMBIENT_SPACE_H
+#define AMBIENT_SPACE_H
+
+#include <vector>
+#include <typeinfo>
+#include <variant>
+#include "../Computation/State.h"
+#include "../Computation/DState.h"
 
 // AmbientSpace Class Declaration
+
+struct ModelData {
+    std::vector<double> pos;
+    double scaling;
+};
 
 class AmbientSpace
 {
     public:
         // Constructor
 
-        AmbientSpace(Geometry geometry, Model model Obstacle);
+        AmbientSpace(Geometry geometry, Model model, Obstacle obstacle);
 
         //Methods
 
-        
+        DState acceleration(State state);
+
+        double dot(State state1, State state2);
+
+        State gradient(std::function<double(std::vector<double>)> fn, std::vector<double> pos);
+
+        ModelData toR3(std::vector<double> pos);
+
+        double distance(std::vector<double> pos1, std::vector<double> pos2);
+
+        double distToObstacle(std::vector<double> pos);
 
 
 
-}
+
+
+};
 
 
     // def __init__(self, geometry, model, obstacle):
