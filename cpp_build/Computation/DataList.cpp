@@ -1,5 +1,6 @@
 #include <vector>
 #include <iostream>
+
 #include "State.h"
 #include "DState.h"
 #include "DataList.h"
@@ -8,6 +9,12 @@
 
 
 // Populate datalist with states and mesh connectivity data
+template <typename T>
+DataList<T>::DataList()
+{
+
+}
+
 template <typename T>
 DataList<T>::DataList(std::vector<T> data, std::vector<Pairwise_Connection> connectivity, std::vector<Pairwise_Rigid_Connection> rig_connectivity)
 {

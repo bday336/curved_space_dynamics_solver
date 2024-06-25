@@ -1,14 +1,17 @@
 // C++ libraries
 #include <iostream>
 #include <vector>
-#include <math.h>
-// #include "includes/eigen-3.4.0/Eigen/Dense"
+#include <cmath>
+#include "includes/eigen-3.4.0/Eigen/Dense"
 
 // Project libraries
 #include "Computation/pairwise_connections.h"
 #include "Computation/DataList.h"
 #include "Computation/State.h"
 #include "Computation/DState.h"
+
+#include "AmbientSpace/AmbientSpace.h"
+#include "AmbientSpace/ExampleSpaces/H3HypGinac.hpp"
 
 // Define Constants
 const double PI = 3.141592653589793238463;
@@ -20,15 +23,17 @@ int main()
     // std::cout.precision(15); // Max double precision
     // std::cout << PI << std::endl;
 
-    // Eigen::Vector3d pos(.5, PI/2., 0.);
-    // Eigen::Vector3d vel(0.,0.,1.);
+    Eigen::Vector3d pos(.5, PI/2., 0.);
+    Eigen::Vector3d vel(0.,0.,1.);
 
-    std::vector<double> pos = {.5, PI/2., 0.};
-    std::vector<double> vel = {0.,0.,1.};
+    // std::vector<double> pos = {.5, PI/2., 0.};
+    // std::vector<double> vel = {0.,0.,1.};
 
     State test_state(pos,vel);
 
-    std::vector<double> acc = {1.,-10.,1.};
+    Eigen::Vector3d acc(1.,-10.,1.);
+
+    // std::vector<double> acc = {1.,-10.,1.};
 
     DState test_dstate(vel,acc);
 
@@ -60,6 +65,38 @@ int main()
     DataList<State> dlist_test(states,connectivity,rig_connectivity);
 
     dlist_test.print_info();
+
+    // Eigen::Matrix3d p;
+    // p << 1, 2, 3,
+    //     4, 5, 6,
+    //     7, 8, 9;
+    // Eigen::Vector3d r(1, 1, 1);
+    // Eigen::Vector3d s(.1, .1, .1);
+
+    // // Matrix/matrix multiplication
+    // std::cout << "p*p:\n" << p*p << std::endl;
+
+    // // Matrix/vector multiplication
+    // std::cout << "p*r:\n" << p*r << std::endl;
+    // std::cout << "r^T*p:\n" << r.transpose()*p << std::endl;
+    
+    // // Vector/vector multiplication (inner product)
+    // std::cout << "r^T*s:\n" << r.transpose()*s << std::endl;
+
+    AmbientSpace ambientSpace = hyperbolic;
+
+    Eigen::Vector3d pos2(1,PI/2.,PI);
+    Eigen::Vector3d pos1(1,PI/2.,0);
+
+    // std::cout << geoMetric(pos1) << std::endl;
+
+    // std::cout << geoChristoffel(test_state) << std::endl;
+
+    // std::cout << geoDistance(pos1,pos2) << std::endl;
+
+
+    std::cout << ambientSpace.geometry.distance(pos1,pos2) << std::endl;
+
 
 
 

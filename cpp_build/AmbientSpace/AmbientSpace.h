@@ -2,23 +2,31 @@
 #define AMBIENT_SPACE_H
 
 #include <vector>
-#include <typeinfo>
-#include <variant>
+#include "../includes/eigen-3.4.0/Eigen/Dense"
+#include "Components/Geometry.h"
+#include "Components/Model.h"
+#include "Components/Obstacle.h"
 #include "../Computation/State.h"
 #include "../Computation/DState.h"
 
 // AmbientSpace Class Declaration
 
 struct ModelData {
-    std::vector<double> pos;
+    Eigen::Vector3d pos;
     double scaling;
 };
 
 class AmbientSpace
 {
     public:
-        // Constructor
+        // Properties
+        Geometry geometry;
+        Model model;
+        Obstacle obstacle;
 
+
+        // Constructor
+        AmbientSpace();
         AmbientSpace(Geometry geometry, Model model, Obstacle obstacle);
 
         //Methods
@@ -27,13 +35,14 @@ class AmbientSpace
 
         double dot(State state1, State state2);
 
-        State gradient(std::function<double(std::vector<double>)> fn, std::vector<double> pos);
+        State gradient(std::function<double(Eigen::Vector3d)> fn, Eigen::Vector3d pos);
 
-        ModelData toR3(std::vector<double> pos);
+        // This version overloaded to handle distance between vertices in configuration space class
+        State gradient(std::function<double(Eigen::Vector3d,Eigen::Vector3d)> fn, Eigen::Vector3d posi, Eigen::Vector3d pos);
 
-        double distance(std::vector<double> pos1, std::vector<double> pos2);
+        ModelData toR3(Eigen::Vector3d pos);
 
-        double distToObstacle(std::vector<double> pos);
+        double distToObstacle(Eigen::Vector3d pos);
 
 
 

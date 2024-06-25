@@ -1,67 +1,35 @@
 #include <vector>
+#include <iostream>
 #include <typeinfo>
 #include <variant>
+#include "../../includes/eigen-3.4.0/Eigen/Dense"
 #include "Geometry.h"
-#include "../Computation/State.h"
-#include "../Computation/DState.h"
+#include "../../Computation/State.h"
+#include "../../Computation/DState.h"
 
 // AmbientSpace Class Declaration
 
-struct GeometryData {
-    std::function<double(State)> vertex_jac;
+Geometry::Geometry()
+{
 
-    std::function<double(State, State)> d12;
-
-    std::function<double(State, State, std::vector<double>)> dtd12;
-
-    std::function<double(State, State)> da1d12;
-    std::function<double(State, State)> db1d12;
-    std::function<double(State, State)> dg1d12;
-
-    std::function<double(State, State, std::vector<double>, std::vector<std::vector<double>>)> ddtd12;
-
-    std::function<double(State, State)> da1da1d12;
-    std::function<double(State, State)> db1da1d12;
-    std::function<double(State, State)> dg1da1d12;
-    std::function<double(State, State)> da2da1d12;
-    std::function<double(State, State)> db2da1d12;
-    std::function<double(State, State)> dg2da1d12;
-
-    std::function<double(State, State)> db1db1d12;
-    std::function<double(State, State)> dg1db1d12;
-    std::function<double(State, State)> db2db1d12;
-    std::function<double(State, State)> dg2db1d12;
-
-    std::function<double(State, State)> dg1dg1d12;
-    std::function<double(State, State)> dg2dg1d12;
-
-    std::function<std::vector<std::vector<double>>(State)> dmetric_terms;
-
-    // m, f, k, l, d12,  da1d12
-    std::function<double(double,double,double,double,double,double)> coupling_derivative1;
-    // m, f, k, l, d12, da1d12, da2d12, da2f, da2d12da1
-    std::function<double(double,double,double,double,double,double,double,double,double)> coupling_derivative2;
-
-    std::function<double(double,double)> rig_con;
-
-    std::function<double(double,double,double)> rig_con_tderivative1;
-    std::function<double(double,double,double,double)> rig_con_tderivative2;
-
-    // m, f, lam, d12,  da1d12
-    std::function<double(double,double,double,double,double)> rig_con_derivative1;
-    // m, f, lam, d12, da1d12, da2d12, da2f, da2d12da1
-    std::function<double(double,double,double,double,double,double,double,double)> rig_con_derivative2;
-
-    // dstate1, dstate2, d12, dtd12, dterms, da1dterms
-    std::function<double(DState,DState,double,double,std::vector<double>, std::vector<std::vector<double>>)> rig_dtcon_derivative1_array;
-};
-
+}
 
 Geometry::Geometry(
-            std::function<std::vector<std::vector<double>>(std::vector<double>)> metricTensor, 
-            std::function<std::vector<double>(State)> christoffel, 
-            std::function<double(std::vector<double>,std::vector<double>)> distance, 
-            GeometryData funcDict
+            std::function< Eigen::Matrix3d (Eigen::Vector3d)> metricTensor, 
+            std::function< Eigen::Vector3d (State)> christoffel, 
+            std::function<double(Eigen::Vector3d,Eigen::Vector3d)> distance
+            )
+{
+    this->metricTensor = metricTensor;
+    this->christoffel = christoffel;
+    this->distance = distance;
+}
+
+Geometry::Geometry(
+            std::function< Eigen::Matrix3d (Eigen::Vector3d)> metricTensor, 
+            std::function< Eigen::Vector3d (State)> christoffel, 
+            std::function<double(Eigen::Vector3d,Eigen::Vector3d)> distance, 
+            derivative_funcs funcDict
             )
 {
     this->metricTensor = metricTensor;
@@ -74,76 +42,94 @@ Geometry::Geometry(
 
 DState Geometry::covariantAcceleration(State state)
 {
-    std::vector<double> acc = this->christoffel(state);
+    Eigen::Vector3d acc = this->christoffel(state);
     return DState(state.vel,acc);
 }
 
-double dot(State state1, State state2);
+double Geometry::dot(State state1, State state2)
+{
+    Eigen::Matrix3d mat = this->metricTensor(state1.pos);
+    
+    return state1.vel.transpose() * mat * state2.vel;
+}
 
-std::vector<double> tangentBasis(std::vector<double> pos);
+std::vector<State> Geometry::tangentBasis(Eigen::Vector3d pos)
+{
+    State b1 = State(pos, Eigen::Vector3d(1.,0.,0.));
+    State b2 = State(pos, Eigen::Vector3d(0.,1.,0.));
+    State b3 = State(pos, Eigen::Vector3d(0.,0.,1.));
+    std::vector<State> basis = {b1,b2,b3};
+    return basis;
+}
 
-State gradient(std::function<double(std::vector<double>)> fn, std::vector<double> pos);
+State Geometry::gradient(std::function<double(Eigen::Vector3d)> fn, Eigen::Vector3d pos)
+{
+    std::vector<State> basis = tangentBasis(pos);
+    State differential = State(pos, Eigen::Vector3d(0.,0.,0.));
 
+    // #//add them all up:
+    double df0 = basis[0].differentiate(fn);
+    State b0 = basis[0].clone();
+    b0.multiplyScalar(df0);
+    differential.add(b0);
 
+    double df1 = basis[1].differentiate(fn);
+    State b1 = basis[1].clone();
+    b1.multiplyScalar(df1);
+    differential.add(b1);
 
-    // def covariantAcceleration(self, state):
-    //     vel = state.vel
-    //     acc = self.christoffel(state)
-    //     return dState(vel,acc)
+    double df2 = basis[2].differentiate(fn);
+    State b2 = basis[2].clone();
+    b2.multiplyScalar(df2);
+    differential.add(b2);
 
+    // #//now the differential needs to be converted from a covector to a vector
+    // #//using the inverse metric:
+    Eigen::Matrix3d metric = this->metricTensor(pos);
+    if(metric.determinant() < 0.00001)
+    {
+        std::cout << "Warning! Metric Tensor Near Singular" << std::endl;
+    }
 
-    // def dot(self, state1, state2):
-    //     mat = self.metricTensor(state1.pos)
-    //     v1 = state1.vel.copy()
-    //     v2 = state2.vel.copy()
-    //     # Apply this to the second vector
-    //     gv2 = mat @ v2
-    //     # Compute the dot product
-    //     return v1.dot(gv2)
+    Eigen::Matrix3d invMetric = metric.inverse();
+    differential.vel = invMetric * differential.vel;
 
+    return differential;
+}
 
-    // # Get a basis for the tangent space at a point ( in coordinates )
-    // # @@@@ Consider changing how we want to do this, depending on which implementation of the gradient we want below:
-    // # @@@@ right now, this is the coordinate basis, and we use the metric tensor
-    // # @@@@ in the gradient: could instead do Gram-Schmidt here then calculate
-    // # @@@@ gradient as differential directly in that basis.
-    // def tangentBasis(self,pos):
-    //     b1 = State(pos, np.array([1,0,0]))
-    //     b2 = State(pos, np.array([0,1,0]))
-    //     b3 = State(pos, np.array([0,0,1]))
-    //     return np.array([b1,b2,b3])
+// This version overloaded to handle distance between vertices in configuration space class
+State Geometry::gradient(std::function<double(Eigen::Vector3d,Eigen::Vector3d)> fn, Eigen::Vector3d posi, Eigen::Vector3d pos)
+{
+    std::vector<State> basis = tangentBasis(pos);
+    State differential = State(pos, Eigen::Vector3d(0.,0.,0.));
 
+    // #//add them all up:
+    double df0 = basis[0].differentiate(fn, posi);
+    State b0 = basis[0].clone();
+    b0.multiplyScalar(df0);
+    differential.add(b0);
 
-    // # //WARNING: IF THE COORDINATE SYSTEM IS SINGULAR: THIS COMPUTATION IS BAD AT THAT POINT!
-    // # //NEED GOOD COORDINATES.....
-    // # //get the gradient of a function fn at a position pos
-    // def gradient(self, fn, pos):
+    double df1 = basis[1].differentiate(fn, posi);
+    State b1 = basis[1].clone();
+    b1.multiplyScalar(df1);
+    differential.add(b1);
 
-    //     basis = self.tangentBasis(pos)
-    //     differential = State(pos, np.array([0,0,0]))
+    double df2 = basis[2].differentiate(fn, posi);
+    State b2 = basis[2].clone();
+    b2.multiplyScalar(df2);
+    differential.add(b2);
 
-    //     #//add them all up:
-    //     df0 = basis[0].differentiate(fn)
-    //     b0 = basis[0].clone().multiplyScalar(df0)
-    //     differential.add(b0)
+    // #//now the differential needs to be converted from a covector to a vector
+    // #//using the inverse metric:
+    Eigen::Matrix3d metric = this->metricTensor(pos);
+    if(metric.determinant() < 0.00001)
+    {
+        std::cout << "Warning! Metric Tensor Near Singular" << std::endl;
+    }
 
-    //     df1 = basis[1].differentiate(fn)
-    //     b1 = basis[1].clone().multiplyScalar(df1)
-    //     differential.add(b1)
+    Eigen::Matrix3d invMetric = metric.inverse();
+    differential.vel = invMetric * differential.vel;
 
-    //     df2 = basis[2].differentiate(fn)
-    //     b2 = basis[2].clone().multiplyScalar(df2)
-    //     differential.add(b2)
+    return differential;
+}
 
-    //     #//now the differential needs to be converted from a covector to a vector
-    //     #//using the inverse metric:
-    //     metric = self.metricTensor(pos)
-    //     if(abs(np.linalg.det(metric))<0.00001):
-    //         print('Warning! Metric Tensor Near Singular')
-    //         print(pos)
-    //         print(metric)
-
-    //     invMetric = np.linalg.inv(metric.copy())
-    //     differential.vel = invMetric @ differential.vel.copy()
-
-    //     return differential

@@ -7,6 +7,8 @@
 struct Pairwise_Connection
 {
     // Properties
+    // Eigen::Vector2i index_pair;
+
     std::vector<int> index_pair;
 };
 
@@ -14,6 +16,7 @@ struct Pairwise_Connection
 struct Pairwise_Rigid_Connection
 {
     // Properties
+//    Eigen::Vector2i index_pair;
     std::vector<int> index_pair;
     double lagrange_multipler;
 };

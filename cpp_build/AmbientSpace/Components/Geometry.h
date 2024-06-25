@@ -4,58 +4,35 @@
 #include <vector>
 #include <typeinfo>
 #include <variant>
-#include "../Computation/State.h"
-#include "../Computation/DState.h"
+#include "../../includes/eigen-3.4.0/Eigen/Dense"
+#include "../../Computation/State.h"
+#include "../../Computation/DState.h"
 
 // AmbientSpace Class Declaration
 
-struct GeometryData {
-    std::function<double(State)> vertex_jac;
+// Struct to container helper derivative functions from user input file
+struct derivative_funcs {
 
-    std::function<double(State, State)> d12;
+    // Generate Jacobian for implicit solver methods
+    std::function<Eigen::Matrix<double,6,6>(State state)> vertex_jacobian;
 
-    std::function<double(State, State, std::vector<double>)> dtd12;
+    // Pariwise coupling potential derivatives (harmonic) - array of derivatives
+    std::function<Eigen::Vector<double,6>(State state1, State state2)> coupling_derviative1_vec;
 
-    std::function<double(State, State)> da1d12;
-    std::function<double(State, State)> db1d12;
-    std::function<double(State, State)> dg1d12;
+    // Pariwise coupling potential double derivatives (harmonic) - array of double derivatives
+    std::function<Eigen::Matrix<double,6,6>(State state1, State state2)> coupling_derviative2_mat;
 
-    std::function<double(State, State, std::vector<double>, std::vector<std::vector<double>>)> ddtd12;
+    derivative_funcs(){}
+    derivative_funcs(
+        std::function<Eigen::Matrix<double,6,6>(State state)> vertex_jacobian,
+        std::function<Eigen::Vector<double,6>(State state1, State state2)> coupling_derviative1_vec,
+        std::function<Eigen::Matrix<double,6,6>(State state1, State state2)> coupling_derviative2_mat){
+            this->vertex_jacobian = vertex_jacobian;
+            this->coupling_derviative1_vec = coupling_derviative1_vec;
+            this->coupling_derviative2_mat = coupling_derviative2_mat;
 
-    std::function<double(State, State)> da1da1d12;
-    std::function<double(State, State)> db1da1d12;
-    std::function<double(State, State)> dg1da1d12;
-    std::function<double(State, State)> da2da1d12;
-    std::function<double(State, State)> db2da1d12;
-    std::function<double(State, State)> dg2da1d12;
+    }
 
-    std::function<double(State, State)> db1db1d12;
-    std::function<double(State, State)> dg1db1d12;
-    std::function<double(State, State)> db2db1d12;
-    std::function<double(State, State)> dg2db1d12;
-
-    std::function<double(State, State)> dg1dg1d12;
-    std::function<double(State, State)> dg2dg1d12;
-
-    std::function<std::vector<std::vector<double>>(State)> dmetric_terms;
-
-    // m, f, k, l, d12,  da1d12
-    std::function<double(double,double,double,double,double,double)> coupling_derivative1;
-    // m, f, k, l, d12, da1d12, da2d12, da2f, da2d12da1
-    std::function<double(double,double,double,double,double,double,double,double,double)> coupling_derivative2;
-
-    std::function<double(double,double)> rig_con;
-
-    std::function<double(double,double,double)> rig_con_tderivative1;
-    std::function<double(double,double,double,double)> rig_con_tderivative2;
-
-    // m, f, lam, d12,  da1d12
-    std::function<double(double,double,double,double,double)> rig_con_derivative1;
-    // m, f, lam, d12, da1d12, da2d12, da2f, da2d12da1
-    std::function<double(double,double,double,double,double,double,double,double)> rig_con_derivative2;
-
-    // dstate1, dstate2, d12, dtd12, dterms, da1dterms
-    std::function<double(DState,DState,double,double,std::vector<double>, std::vector<std::vector<double>>)> rig_dtcon_derivative1_array;
 };
 
 class Geometry
@@ -63,17 +40,23 @@ class Geometry
     public:
 
         // Properties
-        std::function<std::vector<std::vector<double>>(std::vector<double>)> metricTensor;
-        std::function<std::vector<double>(State)> christoffel;
-        std::function<double(std::vector<double>,std::vector<double>)> distance;
-        GeometryData funcDict;
+        std::function< Eigen::Matrix3d (Eigen::Vector3d) > metricTensor;
+        std::function< Eigen::Vector3d (State) > christoffel;
+        std::function< double (Eigen::Vector3d,Eigen::Vector3d)> distance;
+        struct derivative_funcs funcDict;
 
         // Constructor
+        Geometry();
         Geometry(
-            std::function<std::vector<std::vector<double>>(std::vector<double>)> metricTensor, 
-            std::function<std::vector<double>(State)> christoffel, 
-            std::function<double(std::vector<double>,std::vector<double>)> distance, 
-            GeometryData funcDict
+            std::function< Eigen::Matrix3d (Eigen::Vector3d)> metricTensor, 
+            std::function< Eigen::Vector3d (State)> christoffel, 
+            std::function<double(Eigen::Vector3d,Eigen::Vector3d)> distance
+            );
+        Geometry(
+            std::function< Eigen::Matrix3d (Eigen::Vector3d)> metricTensor, 
+            std::function< Eigen::Vector3d (State)> christoffel, 
+            std::function<double(Eigen::Vector3d,Eigen::Vector3d)> distance, 
+            struct derivative_funcs funcDict
             );
 
         //Methods
@@ -82,9 +65,13 @@ class Geometry
 
         double dot(State state1, State state2);
 
-        std::vector<double> tangentBasis(std::vector<double> pos);
+        std::vector<State> tangentBasis(Eigen::Vector3d pos);
 
-        State gradient(std::function<double(std::vector<double>)> fn, std::vector<double> pos);
+        State gradient(std::function<double(Eigen::Vector3d)> fn, Eigen::Vector3d pos);
+        // This version overloaded to handle distance between vertices in configuration space class
+        State gradient(std::function<double(Eigen::Vector3d,Eigen::Vector3d)> fn, Eigen::Vector3d posi, Eigen::Vector3d pos);
+
+        // methods acting as proxy calls from the 
 
 };
 

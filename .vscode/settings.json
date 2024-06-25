@@ -82,6 +82,17 @@
         "stop_token": "cpp",
         "thread": "cpp",
         "cinttypes": "cpp",
-        "variant": "cpp"
+        "variant": "cpp",
+        "__tree": "cpp",
+        "cfenv": "cpp",
+        "future": "cpp",
+        "list": "cpp",
+        "map": "cpp",
+        "set": "cpp",
+        "strstream": "cpp",
+        "valarray": "cpp",
+        "hash_map": "cpp",
+        "dense": "cpp",
+        "fft": "cpp"
     }
 }

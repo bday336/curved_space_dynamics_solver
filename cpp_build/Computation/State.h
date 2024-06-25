@@ -2,6 +2,8 @@
 #define STATE_H
 
 #include <vector>
+#include "../includes/eigen-3.4.0/Eigen/Dense"
+
 #include "DState.h"
 
 class State
@@ -9,12 +11,17 @@ class State
     public:
 
         // Properties
-        std::vector<double> pos;
-        std::vector<double> vel;
+        Eigen::Vector3d pos;
+        Eigen::Vector3d vel;
+
+        // std::vector<double> pos;
+        // std::vector<double> vel;
 
         // Constructor
         //build a state from the input of an object storing position data and an object storing velocity data
-        State(std::vector<double> pos, std::vector<double> vel);
+        State(Eigen::Vector3d pos, Eigen::Vector3d vel);
+
+        // State(std::vector<double> pos, std::vector<double> vel);
 
         // Methods
         //make a copy of a given state (not just reference it in memory) and return the copy
@@ -33,7 +40,11 @@ class State
         void multiplyScalar(double k);
 
         //take the directional derivative of a function at pos in direction vel:
-        double differentiate(std::function<double(std::vector<double>)> fn);
+        double differentiate(std::function<double(Eigen::Vector3d)> fn);
+        // This version overloaded to handle distance between vertices in configuration space class
+        double differentiate(std::function<double(Eigen::Vector3d,Eigen::Vector3d)> fn, Eigen::Vector3d posi);
+
+        // double differentiate(std::function<double(std::vector<double>)> fn);
 
         //move a state infintesimally along its tangent direction
         void flow(double eps);

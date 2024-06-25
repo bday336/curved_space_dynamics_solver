@@ -1,10 +1,10 @@
 
 # Define the symbols we might want to change:
 CXX	:= g++
-CXXFLAGS := -std=c++20
+CXXFLAGS := -std=c++20 -lginac -lcln
 INCLUDES := /includes/eigen-3.4.0/Eigen/		# This would contain any -I options to the compiler, if there are any.
 
-OBJECTS	:= $(patsubst %.cpp,%.o,$(wildcard *.cpp Computation/*.cpp))
+OBJECTS	:= $(patsubst %.cpp,%.o,$(wildcard *.cpp Computation/*.cpp Computation/Solvers/*.cpp AmbientSpace/*.cpp AmbientSpace/Components/*.cpp AmbientSpace/ExampleSpaces/*.cpp ConfigurationSpace/*.cpp))
 
 simulation_test: $(OBJECTS)
 	$(CXX) $(CXXFLAGS) -I $(INCLUDES)  $(OBJECTS) -o simulation_test 

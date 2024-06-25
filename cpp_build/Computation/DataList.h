@@ -4,6 +4,7 @@
 #include <vector>
 #include <typeinfo>
 #include <variant>
+
 #include "State.h"
 #include "DState.h"
 #include "pairwise_connections.h"
@@ -20,6 +21,7 @@ class DataList
 
         // Constructor
         // Populate datalist with states and mesh connectivity data
+        DataList();
         DataList(std::vector<T> data, std::vector<Pairwise_Connection> connectivity, std::vector<Pairwise_Rigid_Connection> rig_connectivity);
 
         // Methods
